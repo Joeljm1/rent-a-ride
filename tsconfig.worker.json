@@ -1,0 +1,18 @@
+{
+	"extends": "./tsconfig.node.json",
+	"compilerOptions": {
+		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker.tsbuildinfo",
+		"types": [
+			"vite/client",
+			"./worker-configuration.d.ts",
+			"react",
+			"react-dom",
+			"@cloudflare/workers-types"
+		],
+		"jsx": "react-jsx",
+		"jsxImportSource": "react"
+	},
+	"include": [
+		"src/worker"
+	]
+}

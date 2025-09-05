@@ -1,0 +1,30 @@
+{
+	"files": [],
+	"references": [
+		{
+			"path": "./tsconfig.app.json"
+		},
+		{
+			"path": "./tsconfig.node.json"
+		},
+		{
+			"path": "./tsconfig.worker.json"
+		}
+	],
+	"compilerOptions": {
+		"types": [
+			"./worker-configuration.d.ts",
+			"node",
+			"react",
+			"react-dom",
+			"@types/node"
+		],
+		"jsx": "react-jsx",
+		"jsxImportSource": "react",
+		"paths": {
+			"@/*": [
+				"./src/react-app/"
+			]
+		}
+	}
+}

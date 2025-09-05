@@ -1,0 +1,64 @@
+# For more details on how to configure Wrangler, refer to:
+# https://developers.cloudflare.com/workers/wrangler/configuration/
+
+name= "rent-a-ride"
+main= "./src/worker/index.ts"
+compatibility_date= "2025-04-01"
+compatibility_flags= ["nodejs_compat"]
+upload_source_maps= true
+
+[observability]
+enabled = true
+
+[placement]
+mode = "smart"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rent-a-ride-db2"
+database_id = "bb853119-b3f2-4f72-9e50-a114e9650526"
+migrations_dir = "drizzle"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "0991ea2250b54d4a85d9e1bc4c7e82c0"
+
+[assets]
+directory = "./dist/client"
+not_found_handling = "single-page-application"
+	# /**
+	#  * Smart Placement
+	#  * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
+	#  */
+	# // "placement": { "mode": "smart" }
+	# /**
+	#  * Bindings
+	#  * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
+	#  * databases, object storage, AI inference, real-time communication and more.
+	#  * https://developers.cloudflare.com/workers/runtime-apis/bindings/
+	#  */
+	# /**
+	#  * Environment Variables
+	#  * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
+	#  */
+	# // "vars": { "MY_VARIABLE": "production_value" }
+	# /**
+	#  * Note: Use secrets to store sensitive data.
+	#  * https://developers.cloudflare.com/workers/configuration/secrets/
+	#  */
+	# /**
+	#  * Static Assets
+	#  * https://developers.cloudflare.com/workers/static-assets/binding/
+	#  */
+	# // "assets": { "directory": "./public/", "binding": "ASSETS" }
+	# /**
+	#  * Service Bindings (communicate between multiple Workers)
+	#  * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
+	 # */
+	# // "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+# 	"upload_source_maps": true,
+# 	"assets": {
+# 		"directory": "./dist/client",
+# 		"not_found_handling": "single-page-application"
+# 	}
+# }
