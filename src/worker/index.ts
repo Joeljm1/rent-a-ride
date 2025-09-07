@@ -47,19 +47,25 @@ app.get("/api/db", async (c) => {
 });
 
 app.post(
-  "/api/carPics",
+  "/api/addCar",
   zValidator(
     "form",
     z.object({
-      file: z.file().refine((file) => file.size <= 500 * 1024 * 1024, {
-        message: `File size must be less than ${(500 * 1024 * 1024) / (1024 * 1024)}MB`,
-      }),
+      // file: z.file(),
+      brand: z.string(),
+      model: z.string(),
+      distance: z.coerce.number().int(),
+      year: z.coerce.number().int(),
+      seats: z.coerce.number().int(),
+      description: z.string(),
+      fuelType: z.string(),
+      transmission: z.string(),
+      // coverImageId: z.coerce.number().int(),
     }),
   ),
   async (c) => {
     const body = await c.req.parseBody();
-    const file = body["file"] as File;
-    console.log(file);
+    console.log(body);
     return c.json({});
   },
 );
