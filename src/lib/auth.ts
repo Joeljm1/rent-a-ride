@@ -12,10 +12,11 @@ import { drizzle } from "drizzle-orm/d1";
 import { schema } from "../db/schema";
 import sendMail from "./email/email";
 import { hash, verify } from "./hash";
+import baseURL from "../react-app/BaseURL";
 import type { CloudflareBindings } from "../worker/env";
 
 // const baseURL = "https://car-rental.joeltest.workers.dev";
-const baseURL = "http://localhost:5173";
+// const baseURL = "http://localhost:5173";
 
 // Single auth configuration that handles both CLI and runtime scenarios
 // env always present but put option only for the cli schema generation

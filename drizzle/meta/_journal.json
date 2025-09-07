@@ -8,6 +8,20 @@
       "when": 1756464165690,
       "tag": "0000_rich_vance_astro",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1757161667097,
+      "tag": "0001_perpetual_bug",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1757223647631,
+      "tag": "0002_wealthy_wendigo",
+      "breakpoints": true
     }
   ]
 }

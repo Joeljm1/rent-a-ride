@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authClient } from "../lib/auth-client";
+import BaseURL from "./BaseURL";
 import "./Register.css";
 
 interface userInfo {
@@ -102,8 +103,8 @@ export default function Register() {
           email: usrInfo.email,
           password: usrInfo.password,
           name: usrInfo.name,
-          callbackURL: "https://car-rental.joeltest.workers.dev",
-          // callbackURL: "http://localhost:5173",
+          // callbackURL: "https://car-rental.joeltest.workers.dev",
+          callbackURL: BaseURL,
         },
         {
           onRequest: (ctx) => {

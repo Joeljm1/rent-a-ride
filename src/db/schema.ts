@@ -71,4 +71,62 @@ export const jwkss = sqliteTable("jwkss", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
-export const schema = { users, sessions, accounts, verifications, jwkss };
+export const cars = sqliteTable("cars", {
+  // id: text("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // name: text().notNull(),
+  distanceUsed: integer().notNull(),
+  description: text(),
+  brand: text("brand").notNull(),
+  model: text("model").notNull(),
+  year: integer("year").notNull(),
+  fuelType: text("fuel_type").notNull(),
+  transmission: text("transmission").notNull(),
+  seats: integer("seats").notNull(),
+});
+
+export const rental = sqliteTable("rental", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  carId: text("carid")
+    .notNull()
+    .references(() => cars.id, { onDelete: "cascade" }),
+  rentedBy: text("rentedBy")
+    .references(() => users.id)
+    .notNull(),
+  rentedAt: integer("rentedAt", { mode: "timestamp" }).notNull(),
+  expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
+
+  isComplete: integer("isComplete", { mode: "boolean" })
+    .$defaultFn(() => false)
+    .notNull(),
+});
+
+export const carPics = sqliteTable("carPics", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  carId: text("carId")
+    .notNull()
+    .references(() => cars.id, { onDelete: "cascade" }),
+  url: text("url").notNull(), // object storage URL
+
+  uploadedAt: integer("uploaded_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
+
+  isCover: integer("is_cover", { mode: "boolean" })
+    .$defaultFn(() => false)
+    .notNull(),
+});
+
+export const schema = {
+  users,
+  sessions,
+  accounts,
+  verifications,
+  jwkss,
+  cars,
+  carPics,
+  rental,
+};

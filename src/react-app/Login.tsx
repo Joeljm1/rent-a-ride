@@ -1,8 +1,7 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { authClient } from "../lib/auth-client";
-import { redirect } from "react-router";
-import { AuthContext } from "./AuthContext";
-import "./Register.css"; // Reusing the same CSS styles
+import { useLocation } from "react-router";
+import BaseURL from "./BaseURL";
 
 interface LoginInfo {
   email: string;
@@ -26,12 +25,8 @@ export default function Login() {
     {},
   );
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
-  const Session = useContext(AuthContext);
-  if (Session !== null) {
-    console.log("Logged in");
-    redirect("/");
-  }
-  // Validation functions
+  const location = useLocation();
+
   const validateField = (name: string, value: string): string | undefined => {
     switch (name) {
       case "email": {
@@ -53,7 +48,6 @@ export default function Login() {
   const handleFieldChange = (name: string, value: string) => {
     setLoginInfo({ ...loginInfo, [name]: value });
 
-    // Clear validation error when user starts typing
     if (validationErrors[name as keyof ValidationErrors]) {
       setValidationErrors({ ...validationErrors, [name]: undefined });
     }
@@ -79,7 +73,6 @@ export default function Login() {
   async function signIn(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.preventDefault();
 
-    // Validate form before submission
     if (!validateForm()) {
       return;
     }
@@ -95,8 +88,7 @@ export default function Login() {
         {
           email: loginInfo.email,
           password: loginInfo.password,
-          // callbackURL: "https://car-rental.joeltest.workers.dev/",
-          callbackURL: "http://localhost:5173/",
+          callbackURL: BaseURL,
         },
         {
           onRequest: (ctx) => {
@@ -106,7 +98,6 @@ export default function Login() {
             console.log("Auth success:", ctx.data);
             setSuccess(true);
             setLoginInfo({ email: "", password: "" });
-            // Redirect to dashboard or home page after successful login
             setTimeout(() => {
               window.location.href = "/";
             }, 1500);
@@ -133,69 +124,28 @@ export default function Login() {
   }
 
   return (
-    <div className="register-container">
-      <div className="register-card">
-        <div className="register-header">
-          <h1>Welcome Back</h1>
-          <p>Sign in to your car rental account</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {location.state?.message ? (
+          <div className="justify-center text-red-500">
+            {location.state.message}
+          </div>
+        ) : (
+          ""
+        )}
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome Back
+            </h1>
+            <p className="text-gray-600">Sign in to your car rental account</p>
+          </div>
 
-        <form className="register-form">
-          {error && (
-            <div className="alert alert-error">
-              <svg
-                className="alert-icon"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span>{error}</span>
-            </div>
-          )}
-
-          {success && (
-            <div className="alert alert-success">
-              <svg
-                className="alert-icon"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span>
-                Sign in successful! Redirecting you to the dashboard...
-              </span>
-            </div>
-          )}
-
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              className={`form-input ${validationErrors.email && touched.email ? "error" : ""} ${loginInfo.email && !validationErrors.email ? "success" : ""}`}
-              placeholder="Enter your email address"
-              value={loginInfo.email}
-              onChange={(e) => handleFieldChange("email", e.target.value)}
-              onBlur={(e) => handleFieldBlur("email", e.target.value)}
-              disabled={isLoading}
-              required
-            />
-            {validationErrors.email && touched.email && (
-              <div className="field-error">
+          <form className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
                 <svg
-                  className="error-icon"
+                  className="w-5 h-5 text-red-500 flex-shrink-0"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
@@ -205,73 +155,153 @@ export default function Login() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>{validationErrors.email}</span>
+                <span className="text-red-700">{error}</span>
               </div>
             )}
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              className={`form-input ${validationErrors.password && touched.password ? "error" : ""} ${loginInfo.password && !validationErrors.password ? "success" : ""}`}
-              placeholder="Enter your password"
-              value={loginInfo.password}
-              onChange={(e) => handleFieldChange("password", e.target.value)}
-              onBlur={(e) => handleFieldBlur("password", e.target.value)}
-              disabled={isLoading}
-              required
-            />
-            {validationErrors.password && touched.password && (
-              <div className="field-error">
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-3">
                 <svg
-                  className="error-icon"
+                  className="w-5 h-5 text-green-500 flex-shrink-0"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
                   <path
                     fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>{validationErrors.password}</span>
+                <span className="text-green-700">
+                  Sign in successful! Redirecting you to the dashboard...
+                </span>
               </div>
             )}
+
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  validationErrors.email && touched.email
+                    ? "border-red-500 bg-red-50"
+                    : loginInfo.email && !validationErrors.email
+                      ? "border-green-500 bg-green-50"
+                      : "border-gray-300"
+                }`}
+                placeholder="Enter your email address"
+                value={loginInfo.email}
+                onChange={(e) => handleFieldChange("email", e.target.value)}
+                onBlur={(e) => handleFieldBlur("email", e.target.value)}
+                disabled={isLoading}
+                required
+              />
+              {validationErrors.email && touched.email && (
+                <div className="flex items-center space-x-2 mt-2 text-red-600">
+                  <svg
+                    className="w-4 h-4 flex-shrink-0"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-sm">{validationErrors.email}</span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  validationErrors.password && touched.password
+                    ? "border-red-500 bg-red-50"
+                    : loginInfo.password && !validationErrors.password
+                      ? "border-green-500 bg-green-50"
+                      : "border-gray-300"
+                }`}
+                placeholder="Enter your password"
+                value={loginInfo.password}
+                onChange={(e) => handleFieldChange("password", e.target.value)}
+                onBlur={(e) => handleFieldBlur("password", e.target.value)}
+                disabled={isLoading}
+                required
+              />
+              {validationErrors.password && touched.password && (
+                <div className="flex items-center space-x-2 mt-2 text-red-600">
+                  <svg
+                    className="w-4 h-4 flex-shrink-0"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-sm">{validationErrors.password}</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className={`w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white transition-all duration-200 ${
+                isLoading
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              }`}
+              onClick={signIn}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  <span>Signing In...</span>
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center space-y-2">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{" "}
+              <a
+                href="/register"
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Create one
+              </a>
+            </p>
+            <p className="text-sm text-gray-600">
+              <a
+                href="/forgot-password"
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Forgot your password?
+              </a>
+            </p>
           </div>
-
-          <button
-            type="submit"
-            className={`submit-button ${isLoading ? "loading" : ""}`}
-            onClick={signIn}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <div className="spinner"></div>
-                <span>Signing In...</span>
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </button>
-        </form>
-
-        <div className="register-footer">
-          <p>
-            Don't have an account?{" "}
-            <a href="/register" className="link">
-              Create one
-            </a>
-          </p>
-          <p style={{ marginTop: "0.5rem" }}>
-            <a href="/forgot-password" className="link">
-              Forgot your password?
-            </a>
-          </p>
         </div>
       </div>
     </div>

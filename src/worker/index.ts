@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { cors } from "hono/cors";
+import * as z from "zod";
+import { zValidator } from "@hono/zod-validator";
 import { createAuth } from "../lib/auth";
 import { users } from "../db/schema";
 import type { CloudflareBindings } from "./env";
@@ -13,7 +15,10 @@ const app = new Hono<{ Bindings: CloudflareBindings; Variables: Variables }>();
 app.use(
   "/api/auth/**",
   cors({
-    origin: "http://localhost:5173", // In production, replace with your actual domain
+    origin: [
+      "http://localhost:5173",
+      "https://car-rental.joeltest.workers.dev/",
+    ], // In production, replace with your actual domain
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["POST", "GET", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
@@ -41,8 +46,25 @@ app.get("/api/db", async (c) => {
   return c.json(row);
 });
 
+app.post(
+  "/api/carPics",
+  zValidator(
+    "form",
+    z.object({
+      file: z.file().refine((file) => file.size <= 500 * 1024 * 1024, {
+        message: `File size must be less than ${(500 * 1024 * 1024) / (1024 * 1024)}MB`,
+      }),
+    }),
+  ),
+  async (c) => {
+    const body = await c.req.parseBody();
+    const file = body["file"] as File;
+    console.log(file);
+    return c.json({});
+  },
+);
 app.get("/api/", (c) => c.json({ name: "Joel" }));
 app.get("/api/env", (c) => c.json({ env: c.env.BETTER_AUTH_URL }));
 app.get("/api/name", (c) => c.json({ name: "test" }));
 
-export default app as never;
+export default app;
