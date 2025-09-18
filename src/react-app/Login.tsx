@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { authClient } from "../lib/auth-client";
 import { useLocation } from "react-router";
-import BaseURL from "./BaseURL";
+import BaseURL from "../../BaseURL";
 
 interface LoginInfo {
   email: string;

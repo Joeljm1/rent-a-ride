@@ -5,14 +5,18 @@ import FormInput from "./FormInput";
 import FormSelect from "./FormSelect";
 import FormTextarea from "./FormTextarea";
 import Button from "./Button";
-import BaseURL from "../BaseURL.ts";
+import BaseURL from "../../../BaseURL.ts";
 
-export type FileWithProgress = {
-  id: string;
+type FileSend = {
   file: File;
+  isCover: boolean;
+};
+
+export interface FileWithProgress extends FileSend {
+  id: string;
   progress: number;
   uploaded: boolean;
-};
+}
 
 interface CarFormData {
   brand: string;
@@ -27,7 +31,6 @@ interface CarFormData {
 
 export default function FileUploader() {
   const [files, setFiles] = useState<FileWithProgress[]>([]);
-  const [coverImageId, setCoverImageId] = useState<string>("");
   const [formData, setFormData] = useState<CarFormData>({
     brand: "",
     model: "",
@@ -84,15 +87,10 @@ export default function FileUploader() {
       Object.entries(formData).forEach(([key, value]) => {
         submitData.append(key, value);
       });
-
-      // Add cover image ID to form data
-      submitData.append("coverImageId", coverImageId);
-
       files.forEach((fileWithProgress, index) => {
         submitData.append(`file_${index}`, fileWithProgress.file);
-        // Mark which file is the cover image
-        if (fileWithProgress.id === coverImageId) {
-          submitData.append(`isCover_${index}`, "true");
+        if (fileWithProgress.isCover) {
+          submitData.append("Cover", `${index}`);
         }
       });
 
@@ -216,12 +214,7 @@ export default function FileUploader() {
           required
         />
 
-        <FileUpload
-          files={files}
-          setFiles={setFiles}
-          coverImageId={coverImageId}
-          setCoverImageId={setCoverImageId}
-        />
+        <FileUpload files={files} setFiles={setFiles} />
 
         {errors.images && (
           <div className="text-red-600 text-sm">{errors.images}</div>

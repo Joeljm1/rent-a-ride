@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { authClient } from "../lib/auth-client";
-import BaseURL from "./BaseURL";
+import BaseURL from "../../BaseURL";
 import "./Register.css";
 
 interface userInfo {

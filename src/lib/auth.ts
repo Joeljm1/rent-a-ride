@@ -12,7 +12,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { schema } from "../db/schema";
 import sendMail from "./email/email";
 import { hash, verify } from "./hash";
-import baseURL from "../react-app/BaseURL";
+import baseURL from "../../BaseURL";
 import type { CloudflareBindings } from "../worker/env";
 
 // const baseURL = "https://car-rental.joeltest.workers.dev";

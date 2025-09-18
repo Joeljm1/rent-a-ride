@@ -1,0 +1,14 @@
+### 
+
+GET http://localhost:5173/api/cars HTTP/1.1
+
+
+### 
+
+GET http://localhost:4000/auth/google/oidcURL HTTP/1.1
+Cookie: SessionCookie=ISXWGVTHKVNTITQBAEABHJOFT4
+
+
+### 
+
+GET http://localhost:5173/api/cars/vehicleList?page=2&pageSize=1 HTTP/1.1

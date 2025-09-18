@@ -23,7 +23,7 @@
 		"jsxImportSource": "react",
 		"paths": {
 			"@/*": [
-				"./src/react-app/"
+				"./src/react-app/*"
 			]
 		}
 	}

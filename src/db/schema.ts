@@ -72,12 +72,10 @@ export const jwkss = sqliteTable("jwkss", {
 });
 
 export const cars = sqliteTable("cars", {
-  // id: text("id").primaryKey(),
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  // name: text().notNull(),
   distanceUsed: integer().notNull(),
   description: text(),
   brand: text("brand").notNull(),
@@ -90,7 +88,7 @@ export const cars = sqliteTable("cars", {
 
 export const rental = sqliteTable("rental", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  carId: text("carid")
+  carId: integer("carid")
     .notNull()
     .references(() => cars.id, { onDelete: "cascade" }),
   rentedBy: text("rentedBy")
@@ -106,10 +104,10 @@ export const rental = sqliteTable("rental", {
 
 export const carPics = sqliteTable("carPics", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  carId: text("carId")
+  carId: integer("carId")
     .notNull()
     .references(() => cars.id, { onDelete: "cascade" }),
-  url: text("url").notNull(), // object storage URL
+  url: text("url").notNull(), // object storage URL change to filename later
 
   uploadedAt: integer("uploaded_at", { mode: "timestamp" })
     .$defaultFn(() => new Date())

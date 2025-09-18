@@ -16,6 +16,7 @@ import { AuthContext } from "./AuthContext";
 import { authClient } from "../lib/auth-client.ts";
 import NavBar from "./components/NavBar.tsx";
 import { JSX } from "react/jsx-runtime";
+import VehiclesPage from "./pages/VehiclesPage.tsx";
 
 const router = createBrowserRouter([
   {
@@ -37,6 +38,32 @@ const router = createBrowserRouter([
       {
         path: "upload",
         element: <FileUploader />,
+      },
+      {
+        path: "/vehicles",
+        element: <VehiclesPage />,
+        loader: async ({ request }) => {
+          const url = new URL(request.url);
+          let page = parseInt(url.searchParams.get("page") || "1");
+          let pageSize = parseInt(url.searchParams.get("pageSize") || "10");
+
+          if (isNaN(page)) {
+            page = 1;
+          }
+          if (isNaN(pageSize)) {
+            pageSize = 10;
+          }
+          const resp = await fetch(
+            `/api/cars/vehicleList?page=${page}&pageSize=${pageSize}`,
+          );
+          if (!resp.ok) {
+            //TODO: handle thrown error
+            throw new Response("Failed to fetch vehicle list", {
+              status: resp.status,
+            });
+          }
+          return resp.json();
+        },
       },
     ],
   },

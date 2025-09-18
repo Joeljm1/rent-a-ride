@@ -4,8 +4,6 @@ import type { FileWithProgress } from "./FileUploader.tsx";
 interface FileUploadProps {
   files: FileWithProgress[];
   setFiles: React.Dispatch<React.SetStateAction<FileWithProgress[]>>;
-  coverImageId?: string;
-  setCoverImageId: React.Dispatch<React.SetStateAction<string>>;
   maxFiles?: number;
   maxSize?: number;
 }
@@ -13,8 +11,6 @@ interface FileUploadProps {
 export default function FileUpload({ 
   files, 
   setFiles, 
-  coverImageId,
-  setCoverImageId,
   maxFiles = 5,
   maxSize = 5 * 1024 * 1024 // 5MB
 }: FileUploadProps) {
@@ -42,16 +38,19 @@ export default function FileUpload({
         progress: 0,
         uploaded: false,
         id: `${file.name}_${Date.now()}_${Math.random()}`,
+        isCover: false,
       });
     }
     
     const newFiles = [...files, ...validFiles];
-    setFiles(newFiles);
     
     // Set first image as cover if no cover is selected
-    if (!coverImageId && newFiles.length > 0) {
-      setCoverImageId(newFiles[0].id);
+    const hasCover = newFiles.some(f => f.isCover);
+    if (!hasCover && newFiles.length > 0) {
+      newFiles[0].isCover = true;
     }
+    
+    setFiles(newFiles);
     
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -60,15 +59,12 @@ export default function FileUpload({
 
   const removeFile = (id: string) => {
     setFiles(prev => {
+      const fileToRemove = prev.find(f => f.id === id);
       const newFiles = prev.filter(f => f.id !== id);
       
       // If removing the cover image, set new cover to first image
-      if (id === coverImageId) {
-        if (newFiles.length > 0) {
-          setCoverImageId(newFiles[0].id);
-        } else {
-          setCoverImageId("");
-        }
+      if (fileToRemove?.isCover && newFiles.length > 0) {
+        newFiles[0].isCover = true;
       }
       
       return newFiles;
@@ -76,7 +72,10 @@ export default function FileUpload({
   };
 
   const setCoverImage = (id: string) => {
-    setCoverImageId(id);
+    setFiles(prev => prev.map(file => ({
+      ...file,
+      isCover: file.id === id
+    })));
   };
 
   return (
@@ -103,7 +102,6 @@ export default function FileUpload({
       <FileList 
         files={files} 
         onRemove={removeFile} 
-        coverImageId={coverImageId}
         onSetCover={setCoverImage}
       />
     </div>
@@ -149,11 +147,10 @@ function FileInput({ inputRef, onFileSelect, disabled }: FileInputProps) {
 interface FileListProps {
   files: FileWithProgress[];
   onRemove: (id: string) => void;
-  coverImageId?: string;
   onSetCover: (id: string) => void;
 }
 
-function FileList({ files, onRemove, coverImageId, onSetCover }: FileListProps) {
+function FileList({ files, onRemove, onSetCover }: FileListProps) {
   if (files.length === 0) return null;
 
   return (
@@ -165,7 +162,7 @@ function FileList({ files, onRemove, coverImageId, onSetCover }: FileListProps) 
             key={fileWithProgress.id} 
             fileWithProgress={fileWithProgress}
             onRemove={onRemove}
-            isCover={coverImageId === fileWithProgress.id}
+            isCover={fileWithProgress.isCover}
             onSetCover={onSetCover}
           />
         ))}
