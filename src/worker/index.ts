@@ -8,7 +8,6 @@ import type { CloudflareBindings } from "./env";
 import type { Variables } from "./types";
 
 const app = new Hono<{ Bindings: CloudflareBindings; Variables: Variables }>();
-
 app
   .use(
     "/api/auth/**",
@@ -51,9 +50,14 @@ app
 
   // Handle all auth routes
   .get("/api/db", async (c) => {
+    try{
     const db = c.get("db");
     const row = await db.select().from(users);
     return c.json(row);
+    } catch (e) {
+      console.error(e);
+      return c.json({ message: "Error", error: e }, 500);
+    }
   })
 
   .get("/api/", (c) => c.json({ name: "Joel" }))

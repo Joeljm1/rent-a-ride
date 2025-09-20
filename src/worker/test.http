@@ -12,3 +12,13 @@ Cookie: SessionCookie=ISXWGVTHKVNTITQBAEABHJOFT4
 ### 
 
 GET http://localhost:5173/api/cars/vehicleList?page=2&pageSize=1 HTTP/1.1
+
+
+### 
+
+GET http://localhost:5173/api/cars/1 HTTP/1.1
+
+
+### 
+
+GET http://localhost:5173/api/cars/models HTTP/1.1

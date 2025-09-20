@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { authClient } from "../lib/auth-client";
 import BaseURL from "../../BaseURL";
 import "./Register.css";
@@ -16,7 +16,6 @@ interface ValidationErrors {
 }
 
 export default function Register() {
-  useEffect(() => {}, []);
   const [usrInfo, setusrInfo] = useState<userInfo>({
     name: "",
     email: "",

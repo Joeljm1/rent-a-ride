@@ -58,6 +58,7 @@ const router = createBrowserRouter([
           );
           if (!resp.ok) {
             //TODO: handle thrown error
+            console.log("error");
             throw new Response("Failed to fetch vehicle list", {
               status: resp.status,
             });

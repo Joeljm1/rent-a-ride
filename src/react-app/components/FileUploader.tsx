@@ -5,7 +5,6 @@ import FormInput from "./FormInput";
 import FormSelect from "./FormSelect";
 import FormTextarea from "./FormTextarea";
 import Button from "./Button";
-import BaseURL from "../../../BaseURL.ts";
 
 type FileSend = {
   file: File;
@@ -94,7 +93,7 @@ export default function FileUploader() {
         }
       });
 
-      const response = await fetch(`${BaseURL}/api/addCar`, {
+      const response = await fetch(`/api/cars/addCar`, {
         method: "POST",
         credentials: "include",
         body: submitData,

@@ -1,4 +1,3 @@
-import { Hono } from "hono";
 import type {
   AvailableCars,
   CarPics,
@@ -13,6 +12,7 @@ import z from "zod";
 // import * as z from "zod";
 import { cars, carPics, rental } from "../db/schema";
 import { and, eq, exists, not, inArray, sql } from "drizzle-orm";
+import { Hono } from "hono";
 
 const carApp = new Hono<{
   Bindings: CloudflareBindings;
@@ -152,88 +152,196 @@ carApp
       z.object({
         page: z.coerce.number().min(1).default(1),
         pageSize: z.coerce.number().min(1).max(100).default(10),
+        sort: z.string().optional(),
+        filter: z.string().optional(),
       }),
     ),
     async (c) => {
-      const db = c.get("db");
-      const { page, pageSize } = c.req.valid("query");
-      const carRows = await db
-        .select()
-        .from(cars)
-        .where(
-          not(
-            exists(
-              db
-                .select()
-                .from(rental)
-                .where(
-                  and(eq(rental.carId, cars.id), eq(rental.isComplete, false)),
-                ),
+      try {
+        const db = c.get("db");
+        const { page, pageSize } = c.req.valid("query");
+        const carRows = await db
+          .select()
+          .from(cars)
+          .where(
+            not(
+              exists(
+                db
+                  .select()
+                  .from(rental)
+                  .where(
+                    and(
+                      eq(rental.carId, cars.id),
+                      eq(rental.isComplete, false),
+                    ),
+                  ),
+              ),
             ),
-          ),
-        )
-        .limit(pageSize)
-        .offset((page - 1) * pageSize);
+          )
+          .limit(pageSize)
+          .offset((page - 1) * pageSize);
 
-      const [{ count }] = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(cars)
-        .where(
-          not(
-            exists(
-              db
-                .select()
-                .from(rental)
-                .where(
-                  and(eq(rental.carId, cars.id), eq(rental.isComplete, false)),
-                ),
+        const [{ count }] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(cars)
+          .where(
+            not(
+              exists(
+                db
+                  .select()
+                  .from(rental)
+                  .where(
+                    and(
+                      eq(rental.carId, cars.id),
+                      eq(rental.isComplete, false),
+                    ),
+                  ),
+              ),
             ),
-          ),
-        );
-      const carIds = carRows.reduce((acc: number[], curr) => {
-        acc.push(curr.id);
-        return acc;
-      }, []);
+          );
+        const carIds = carRows.reduce((acc: number[], curr) => {
+          acc.push(curr.id);
+          return acc;
+        }, []);
 
-      const picsRows: AvailableCarPicsWithCarID[] = await db
-        .select({
-          id: carPics.id,
-          carId: carPics.carId,
-          url: carPics.url,
-          isCover: carPics.isCover,
-        })
-        .from(carPics)
-        .where(inArray(carPics.carId, carIds));
+        const picsRows: AvailableCarPicsWithCarID[] = await db
+          .select({
+            id: carPics.id,
+            carId: carPics.carId,
+            url: carPics.url,
+            isCover: carPics.isCover,
+          })
+          .from(carPics)
+          .where(inArray(carPics.carId, carIds));
 
-      const carPicsVal = picsRows.reduce((acc: CarPicWithID, curr) => {
-        acc[curr.carId] = acc[curr.carId] || [];
-        acc[curr.carId].push(curr);
-        return acc;
-      }, {});
-      const availCars = carRows.reduce((acc: AvailableCars[], curr) => {
-        acc.push({
-          id: curr.id,
-          distanceUsed: curr.distanceUsed,
-          brand: curr.brand,
-          model: curr.model,
-          year: curr.year,
-          fuelType: curr.fuelType,
-          transmission: curr.transmission,
-          seats: curr.seats,
-          pics: carPicsVal[curr.id] || [],
-        });
-        return acc;
-      }, []);
-      const resp: CarList = {
-        data: availCars,
-        metaData: {
-          page: page,
-          pageSize: pageSize,
-          totalPage: Math.ceil(count / pageSize),
-        },
-      };
-      return c.json(resp);
+        const carPicsVal = picsRows.reduce((acc: CarPicWithID, curr) => {
+          acc[curr.carId] = acc[curr.carId] || [];
+          acc[curr.carId].push(curr);
+          return acc;
+        }, {});
+        const availCars = carRows.reduce((acc: AvailableCars[], curr) => {
+          acc.push({
+            id: curr.id,
+            distanceUsed: curr.distanceUsed,
+            brand: curr.brand,
+            model: curr.model,
+            year: curr.year,
+            fuelType: curr.fuelType,
+            transmission: curr.transmission,
+            seats: curr.seats,
+            pics: carPicsVal[curr.id] || [],
+          });
+          return acc;
+        }, []);
+        const resp: CarList = {
+          data: availCars,
+          metaData: {
+            page: page,
+            pageSize: pageSize,
+            totalPage: Math.ceil(count / pageSize),
+          },
+        };
+        return c.json(resp);
+      } catch (error) {
+        console.error(error);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
     },
-  );
+  )
+  .get(
+    "details/:id",
+    zValidator(
+      "param",
+      z.object({
+        id: z.coerce.number().int().min(1),
+      }),
+    ),
+    async (c) => {
+      try {
+        const db = c.get("db");
+        const { id } = c.req.valid("param");
+        const row = await db.select().from(cars).where(eq(cars.id, id));
+        if (row.length == 0) {
+          return c.json({ message: "Car Not Found" }, 404);
+        }
+        return c.json({
+          id: row[0].id,
+          distanceUsed: row[0].distanceUsed,
+          description: row[0].description,
+          brand: row[0].brand,
+          model: row[0].model,
+          year: row[0].year,
+          fuelType: row[0].fuelType,
+          transmission: row[0].transmission,
+          seats: row[0].seats,
+        });
+      } catch (error) {
+        console.error(error);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
+    },
+  )
+
+  .get("/models", async (c) => {
+    try {
+      const db = c.get("db");
+      const rows = await db.selectDistinct({ name: cars.model }).from(cars);
+      const models = rows.reduce((acc: string[], curr) => {
+        acc.push(curr.name);
+        return acc;
+      }, []);
+      return c.json(models);
+    } catch (error) {
+      console.error(error);
+      return c.json({ message: "Internal Server Error" }, 500);
+    }
+  })
+
+  .get("/brands", async (c) => {
+    try {
+      const db = c.get("db");
+      const rows = await db.selectDistinct({ name: cars.brand }).from(cars);
+      const brands = rows.reduce((acc: string[], curr) => {
+        acc.push(curr.name);
+        return acc;
+      }, []);
+      return c.json(brands);
+    } catch (error) {
+      console.error(error);
+      return c.json({ message: "Internal Server Error" }, 500);
+    }
+  })
+
+  .get("/fuel-types", async (c) => {
+    try {
+      const db = c.get("db");
+      const rows = await db.selectDistinct({ name: cars.fuelType }).from(cars);
+      const fuelTypes = rows.reduce((acc: string[], curr) => {
+        acc.push(curr.name);
+        return acc;
+      }, []);
+      return c.json(fuelTypes);
+    } catch (error) {
+      console.error(error);
+      return c.json({ message: "Internal Server Error" }, 500);
+    }
+  })
+
+  .get("/transmissions", async (c) => {
+    try {
+      const db = c.get("db");
+      const rows = await db
+        .selectDistinct({ name: cars.transmission })
+        .from(cars);
+      const transmissions = rows.reduce((acc: string[], curr) => {
+        acc.push(curr.name);
+        return acc;
+      }, []);
+      return c.json(transmissions);
+    } catch (error) {
+      console.error(error);
+      return c.json({ message: "Internal Server Error" }, 500);
+    }
+  });
 
 export default carApp;
