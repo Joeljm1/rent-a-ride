@@ -18,36 +18,26 @@ export interface FilterState {
 export function VehicleFilters({ filters, setFilters }: VehicleFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [brands, setBrands] = useState<string[]>([]);
-  const [fuelTypes, setFuelTypes] = useState<string[]>([]);
-  const [transmissions, setTransmissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Hardcoded filter options
+  const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid"];
+  const transmissions = ["Manual", "Automatic"];
+
   useEffect(() => {
-    const fetchFilterData = async () => {
+    const fetchBrands = async () => {
       try {
-        const [brandsRes, fuelTypesRes, transmissionsRes] = await Promise.all([
-          fetch("/api/cars/brands"),
-          fetch("/api/cars/fuel-types"),
-          fetch("/api/cars/transmissions"),
-        ]);
-
-        const [brandsData, fuelTypesData, transmissionsData] = await Promise.all([
-          brandsRes.json(),
-          fuelTypesRes.json(),
-          transmissionsRes.json(),
-        ]);
-
+        const response = await fetch("/api/cars/brands");
+        const brandsData = await response.json();
         setBrands(brandsData);
-        setFuelTypes(fuelTypesData);
-        setTransmissions(transmissionsData);
       } catch (error) {
-        console.error("Failed to fetch filter data:", error);
+        console.error("Failed to fetch brands:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchFilterData();
+    fetchBrands();
   }, []);
 
   const handleFilterChange = (
@@ -150,7 +140,6 @@ export function VehicleFilters({ filters, setFilters }: VehicleFiltersProps) {
             value={filters.fuelType}
             onChange={(e) => handleFilterChange("fuelType", e.target.value)}
             className="w-full px-3 py-2 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-            disabled={loading}
           >
             <option value="">All types</option>
             {fuelTypes.map((fuelType) => (
@@ -168,7 +157,6 @@ export function VehicleFilters({ filters, setFilters }: VehicleFiltersProps) {
             value={filters.transmission}
             onChange={(e) => handleFilterChange("transmission", e.target.value)}
             className="w-full px-3 py-2 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-            disabled={loading}
           >
             <option value="">All types</option>
             {transmissions.map((transmission) => (

@@ -1,6 +1,18 @@
 import { useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "./ui/carousel";
 import type { AvailableCars } from "../../worker/types";
 
 interface VehicleCardProps {
@@ -9,18 +21,20 @@ interface VehicleCardProps {
 }
 
 export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
-  const [imageLoadingStates, setImageLoadingStates] = useState<Record<number, boolean>>(
-    vehicle.pics.reduce((acc, pic) => ({ ...acc, [pic.id]: true }), {})
-  );
-  const [imageErrorStates, setImageErrorStates] = useState<Record<number, boolean>>({});
+  const [imageLoadingStates, setImageLoadingStates] = useState<
+    Record<number, boolean>
+  >(vehicle.pics.reduce((acc, pic) => ({ ...acc, [pic.id]: true }), {}));
+  const [imageErrorStates, setImageErrorStates] = useState<
+    Record<number, boolean>
+  >({});
 
   const handleImageLoad = (picId: number) => {
-    setImageLoadingStates(prev => ({ ...prev, [picId]: false }));
+    setImageLoadingStates((prev) => ({ ...prev, [picId]: false }));
   };
 
   const handleImageError = (picId: number) => {
-    setImageErrorStates(prev => ({ ...prev, [picId]: true }));
-    setImageLoadingStates(prev => ({ ...prev, [picId]: false }));
+    setImageErrorStates((prev) => ({ ...prev, [picId]: true }));
+    setImageLoadingStates((prev) => ({ ...prev, [picId]: false }));
   };
 
   return (
@@ -40,7 +54,9 @@ export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
                             src={imageUrl}
                             alt={`${vehicle.brand} ${vehicle.model}`}
                             className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
-                              imageLoadingStates[pic.id] ? 'opacity-0' : 'opacity-100'
+                              imageLoadingStates[pic.id]
+                                ? "opacity-0"
+                                : "opacity-100"
                             }`}
                             onLoad={() => handleImageLoad(pic.id)}
                             onError={() => handleImageError(pic.id)}
@@ -97,7 +113,7 @@ export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
         <CardTitle className="text-lg mb-2 line-clamp-1">
           {vehicle.brand} {vehicle.model}
         </CardTitle>
-        
+
         <div className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1">
@@ -109,7 +125,7 @@ export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
               {vehicle.transmission}
             </span>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1">
               <span>👥</span>
@@ -124,7 +140,7 @@ export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-2">
-        <button 
+        <button
           onClick={() => onRent?.(vehicle.id)}
           className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
@@ -137,3 +153,4 @@ export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
     </Card>
   );
 }
+

@@ -11,7 +11,7 @@ import { zValidator } from "@hono/zod-validator";
 import z from "zod";
 // import * as z from "zod";
 import { cars, carPics, rental } from "../db/schema";
-import { and, eq, exists, not, inArray, sql } from "drizzle-orm";
+import { and, eq, exists, not, inArray, sql, desc } from "drizzle-orm";
 import { Hono } from "hono";
 
 const carApp = new Hono<{
@@ -61,13 +61,13 @@ carApp
         .insert(cars)
         .values({
           userId: user.id,
-          brand: body["brand"] as string,
+          brand: (body["brand"] as string).toLowerCase(),
           description: body["description"] as string,
           distanceUsed: parseInt(body["distance"] as string),
-          fuelType: body["fuelType"] as string,
-          model: body["model"] as string,
+          fuelType: (body["fuelType"] as string).toLowerCase(),
+          model: (body["model"] as string).toLowerCase(),
           seats: parseInt(body["seats"] as string),
-          transmission: body["transmission"] as string,
+          transmission: (body["transmission"] as string).toLowerCase(),
           year: parseInt(body["year"] as string),
         })
         .returning({ id: cars.id });
@@ -152,14 +152,35 @@ carApp
       z.object({
         page: z.coerce.number().min(1).default(1),
         pageSize: z.coerce.number().min(1).max(100).default(10),
-        sort: z.string().optional(),
-        filter: z.string().optional(),
+        sort: z.enum(["new", "old", "low", "high"]).default("new"),
+        fuel: z
+          .enum(["petrol", "diesel", "electric", "hybrid", "all"])
+          .default("all"),
+        transmission: z.enum(["manual", "automatic", "all"]).default("all"),
+        minSeat: z.number().default(0),
       }),
     ),
     async (c) => {
       try {
         const db = c.get("db");
-        const { page, pageSize } = c.req.valid("query");
+        const { page, pageSize, sort, fuel, transmission, minSeat } =
+          c.req.valid("query");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let sortProp: any = null;
+        switch (sort) {
+          case "new":
+            sortProp = cars.year;
+            break;
+          case "old":
+            sortProp = desc(cars.year);
+            break;
+          case "low":
+            sortProp = cars.distanceUsed;
+            break;
+          case "high":
+            sortProp = desc(cars.distanceUsed);
+            break;
+        }
         const carRows = await db
           .select()
           .from(cars)
@@ -178,9 +199,9 @@ carApp
               ),
             ),
           )
+          .orderBy(sortProp)
           .limit(pageSize)
           .offset((page - 1) * pageSize);
-
         const [{ count }] = await db
           .select({ count: sql<number>`count(*)` })
           .from(cars)
@@ -306,38 +327,6 @@ carApp
         return acc;
       }, []);
       return c.json(brands);
-    } catch (error) {
-      console.error(error);
-      return c.json({ message: "Internal Server Error" }, 500);
-    }
-  })
-
-  .get("/fuel-types", async (c) => {
-    try {
-      const db = c.get("db");
-      const rows = await db.selectDistinct({ name: cars.fuelType }).from(cars);
-      const fuelTypes = rows.reduce((acc: string[], curr) => {
-        acc.push(curr.name);
-        return acc;
-      }, []);
-      return c.json(fuelTypes);
-    } catch (error) {
-      console.error(error);
-      return c.json({ message: "Internal Server Error" }, 500);
-    }
-  })
-
-  .get("/transmissions", async (c) => {
-    try {
-      const db = c.get("db");
-      const rows = await db
-        .selectDistinct({ name: cars.transmission })
-        .from(cars);
-      const transmissions = rows.reduce((acc: string[], curr) => {
-        acc.push(curr.name);
-        return acc;
-      }, []);
-      return c.json(transmissions);
     } catch (error) {
       console.error(error);
       return c.json({ message: "Internal Server Error" }, 500);

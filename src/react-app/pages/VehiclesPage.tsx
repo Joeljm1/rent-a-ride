@@ -33,10 +33,21 @@ export default function VehiclesPage() {
 
   const filteredAndSortedVehicles = useMemo(() => {
     const filtered = cars.data.filter((vehicle: AvailableCars) => {
-      if (filters.brand && vehicle.brand !== filters.brand) return false;
-      if (filters.fuelType && vehicle.fuelType !== filters.fuelType)
+      if (
+        filters.brand &&
+        vehicle.brand.toLowerCase() !== filters.brand.toLowerCase()
+      )
         return false;
-      if (filters.transmission && vehicle.transmission !== filters.transmission)
+      if (
+        filters.fuelType &&
+        vehicle.fuelType.toLowerCase() !== filters.fuelType.toLowerCase()
+      )
+        return false;
+      if (
+        filters.transmission &&
+        vehicle.transmission.toLowerCase() !==
+          filters.transmission.toLowerCase()
+      )
         return false;
       if (filters.minSeats && vehicle.seats < filters.minSeats) return false;
       if (filters.search) {
