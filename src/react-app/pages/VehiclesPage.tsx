@@ -1,23 +1,23 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { VehicleGrid } from "../components/VehicleGrid";
 import { VehicleFilters, type FilterState } from "../components/VehicleFilters";
-import type { CarList, AvailableCars } from "../../worker/types";
+import type { CarList } from "../../worker/types";
 
 export default function VehiclesPage() {
-  //in ok range only this is sent
   const cars = useLoaderData() as CarList;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1");
 
+  // Initialize filters from URL parameters
   const [filters, setFilters] = useState<FilterState>({
-    brand: "",
-    fuelType: "",
-    transmission: "",
-    minSeats: 1,
-    sortBy: "newest",
-    search: "",
+    brand: searchParams.get("brand") || "",
+    fuelType: searchParams.get("fuelType") || "",
+    transmission: searchParams.get("transmission") || "",
+    minSeats: parseInt(searchParams.get("minSeats") || "1"),
+    sortBy: (searchParams.get("sortBy") as FilterState["sortBy"]) || "newest",
+    search: searchParams.get("search") || "",
   });
 
   const handleRent = (vehicleId: number) => {
@@ -31,67 +31,37 @@ export default function VehiclesPage() {
     navigate(`/vehicles?${params.toString()}`);
   };
 
-  const filteredAndSortedVehicles = useMemo(() => {
-    const filtered = cars.data.filter((vehicle: AvailableCars) => {
-      if (
-        filters.brand &&
-        vehicle.brand.toLowerCase() !== filters.brand.toLowerCase()
-      )
-        return false;
-      if (
-        filters.fuelType &&
-        vehicle.fuelType.toLowerCase() !== filters.fuelType.toLowerCase()
-      )
-        return false;
-      if (
-        filters.transmission &&
-        vehicle.transmission.toLowerCase() !==
-          filters.transmission.toLowerCase()
-      )
-        return false;
-      if (filters.minSeats && vehicle.seats < filters.minSeats) return false;
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        const matchesBrand = vehicle.brand.toLowerCase().includes(searchTerm);
-        const matchesModel = vehicle.model.toLowerCase().includes(searchTerm);
-        if (!matchesBrand && !matchesModel) return false;
-      }
-      return true;
-    });
+  // Update URL and reload data when filters change
+  const handleFiltersChange = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    
+    const params = new URLSearchParams();
+    params.set("page", "1"); // Reset to first page when filters change
 
-    filtered.sort((a: AvailableCars, b: AvailableCars) => {
-      switch (filters.sortBy) {
-        case "newest":
-          return b.year - a.year;
-        case "oldest":
-          return a.year - b.year;
-        case "lowMileage":
-          return a.distanceUsed - b.distanceUsed;
-        case "highMileage":
-          return b.distanceUsed - a.distanceUsed;
-        default:
-          return 0;
-      }
-    });
+    if (newFilters.brand) params.set("brand", newFilters.brand);
+    if (newFilters.fuelType) params.set("fuelType", newFilters.fuelType);
+    if (newFilters.transmission) params.set("transmission", newFilters.transmission);
+    if (newFilters.minSeats > 1) params.set("minSeats", newFilters.minSeats.toString());
+    if (newFilters.sortBy !== "newest") params.set("sortBy", newFilters.sortBy);
+    if (newFilters.search) params.set("search", newFilters.search);
 
-    return filtered;
-  }, [cars.data, filters]);
+    navigate(`/vehicles?${params.toString()}`);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Available Vehicles</h1>
         <p className="text-muted-foreground">
-          Choose from our wide selection of {cars.data.length} vehicles
+          Choose from our wide selection of vehicles
         </p>
       </div>
 
-      <VehicleFilters filters={filters} setFilters={setFilters} />
+      <VehicleFilters filters={filters} setFilters={handleFiltersChange} />
 
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredAndSortedVehicles.length} of {cars.data.length}{" "}
-          vehicles
+          Showing {cars.data.length} vehicles
         </p>
         {cars.metaData && (
           <p className="text-sm text-muted-foreground">
@@ -101,7 +71,7 @@ export default function VehiclesPage() {
       </div>
 
       <VehicleGrid
-        vehicles={filteredAndSortedVehicles}
+        vehicles={cars.data}
         onRent={handleRent}
         currentPage={currentPage}
         totalPages={cars.metaData?.totalPage || 1}

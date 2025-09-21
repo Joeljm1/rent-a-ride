@@ -17,6 +17,7 @@ import { authClient } from "../lib/auth-client.ts";
 import NavBar from "./components/NavBar.tsx";
 import { JSX } from "react/jsx-runtime";
 import VehiclesPage from "./pages/VehiclesPage.tsx";
+import VehicleDetailsPage from "./pages/VehicleDetailsPage.tsx";
 
 const router = createBrowserRouter([
   {
@@ -45,7 +46,7 @@ const router = createBrowserRouter([
         loader: async ({ request }) => {
           const url = new URL(request.url);
           let page = parseInt(url.searchParams.get("page") || "1");
-          let pageSize = parseInt(url.searchParams.get("pageSize") || "10");
+          let pageSize = parseInt(url.searchParams.get("pageSize") || "2");
 
           if (isNaN(page)) {
             page = 1;
@@ -53,8 +54,28 @@ const router = createBrowserRouter([
           if (isNaN(pageSize)) {
             pageSize = 10;
           }
+
+          const queryParams = new URLSearchParams({
+            page: page.toString(),
+            pageSize: pageSize.toString(),
+          });
+
+          const brand = url.searchParams.get("brand");
+          const fuelType = url.searchParams.get("fuelType");
+          const transmission = url.searchParams.get("transmission");
+          const minSeats = url.searchParams.get("minSeats");
+          const sortBy = url.searchParams.get("sortBy");
+          const search = url.searchParams.get("search");
+
+          if (brand) queryParams.set("brand", brand);
+          if (fuelType) queryParams.set("fuelType", fuelType);
+          if (transmission) queryParams.set("transmission", transmission);
+          if (minSeats) queryParams.set("minSeats", minSeats);
+          if (sortBy) queryParams.set("sortBy", sortBy);
+          if (search) queryParams.set("search", search);
+
           const resp = await fetch(
-            `/api/cars/vehicleList?page=${page}&pageSize=${pageSize}`,
+            `/api/cars/vehicleList?${queryParams.toString()}`,
           );
           if (!resp.ok) {
             //TODO: handle thrown error
@@ -65,6 +86,10 @@ const router = createBrowserRouter([
           }
           return resp.json();
         },
+      },
+      {
+        path: "/vehicles/:id",
+        element: <VehicleDetailsPage />,
       },
     ],
   },

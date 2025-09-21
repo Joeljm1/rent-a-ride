@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import {
   Card,
   CardContent,
@@ -14,6 +15,7 @@ import {
   CarouselPrevious,
 } from "./ui/carousel";
 import type { AvailableCars } from "../../worker/types";
+import BaseURL from "../../../BaseURL.ts";
 
 interface VehicleCardProps {
   vehicle: AvailableCars;
@@ -21,6 +23,7 @@ interface VehicleCardProps {
 }
 
 export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
+  const navigate = useNavigate();
   const [imageLoadingStates, setImageLoadingStates] = useState<
     Record<number, boolean>
   >(vehicle.pics.reduce((acc, pic) => ({ ...acc, [pic.id]: true }), {}));
@@ -45,7 +48,10 @@ export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
             <Carousel className="w-full h-full">
               <CarouselContent className="h-full">
                 {vehicle.pics.map((pic) => {
-                  const imageUrl = `https://pub-032f94942a2e444fa6cc5af38ce60e9e.r2.dev/${pic.url}`;
+                  const imageUrl =
+                    BaseURL == "https://car-rental.joeltest.workers.dev"
+                      ? `https://pub-032f94942a2e444fa6cc5af38ce60e9e.r2.dev/${pic.url}`
+                      : "../assets/hono.svg";
                   return (
                     <CarouselItem key={pic.id} className="h-full">
                       <div className="relative w-full h-full">
@@ -146,11 +152,13 @@ export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
         >
           Rent Now
         </button>
-        <button className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+        <button
+          onClick={() => navigate(`/vehicles/${vehicle.id}`)}
+          className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
           Details
         </button>
       </CardFooter>
     </Card>
   );
 }
-

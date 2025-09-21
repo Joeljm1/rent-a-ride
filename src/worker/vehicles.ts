@@ -8,10 +8,20 @@ import type {
 } from "./types";
 import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
-import z from "zod";
-// import * as z from "zod";
+import * as z from "zod";
 import { cars, carPics, rental } from "../db/schema";
-import { and, eq, exists, not, inArray, sql, desc } from "drizzle-orm";
+import {
+  and,
+  eq,
+  exists,
+  not,
+  inArray,
+  sql,
+  desc,
+  gte,
+  like,
+  or,
+} from "drizzle-orm";
 import { Hono } from "hono";
 
 const carApp = new Hono<{
@@ -152,74 +162,100 @@ carApp
       z.object({
         page: z.coerce.number().min(1).default(1),
         pageSize: z.coerce.number().min(1).max(100).default(10),
-        sort: z.enum(["new", "old", "low", "high"]).default("new"),
-        fuel: z
-          .enum(["petrol", "diesel", "electric", "hybrid", "all"])
-          .default("all"),
-        transmission: z.enum(["manual", "automatic", "all"]).default("all"),
-        minSeat: z.number().default(0),
+        sortBy: z
+          .enum(["newest", "oldest", "lowMileage", "highMileage"])
+          .default("newest"),
+        brand: z.string().optional(),
+        fuelType: z.string().optional(),
+        transmission: z.string().optional(),
+        minSeats: z.coerce.number().min(1).optional(),
+        search: z.string().optional(),
       }),
     ),
     async (c) => {
       try {
         const db = c.get("db");
-        const { page, pageSize, sort, fuel, transmission, minSeat } =
-          c.req.valid("query");
+        const {
+          page,
+          pageSize,
+          sortBy,
+          brand,
+          fuelType,
+          transmission,
+          minSeats,
+          search,
+        } = c.req.valid("query");
+
+        const filterConditions = [
+          not(
+            exists(
+              db
+                .select()
+                .from(rental)
+                .where(
+                  and(eq(rental.carId, cars.id), eq(rental.isComplete, false)),
+                ),
+            ),
+          ),
+        ];
+
+        if (brand) {
+          filterConditions.push(eq(cars.brand, brand.toLowerCase()));
+        }
+
+        if (fuelType) {
+          filterConditions.push(eq(cars.fuelType, fuelType.toLowerCase()));
+        }
+
+        if (transmission) {
+          filterConditions.push(
+            eq(cars.transmission, transmission.toLowerCase()),
+          );
+        }
+
+        if (minSeats) {
+          filterConditions.push(gte(cars.seats, minSeats));
+        }
+
+        if (search) {
+          const searchTerm = `%${search.toLowerCase()}%`;
+          filterConditions.push(
+            or(like(cars.brand, searchTerm), like(cars.model, searchTerm))!,
+          );
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let sortProp: any = null;
-        switch (sort) {
-          case "new":
-            sortProp = cars.year;
-            break;
-          case "old":
+        switch (sortBy) {
+          case "newest":
             sortProp = desc(cars.year);
             break;
-          case "low":
+          case "oldest":
+            sortProp = cars.year;
+            break;
+          case "lowMileage":
             sortProp = cars.distanceUsed;
             break;
-          case "high":
+          case "highMileage":
             sortProp = desc(cars.distanceUsed);
             break;
         }
+
+        const whereClause = and(...filterConditions);
+
         const carRows = await db
           .select()
           .from(cars)
-          .where(
-            not(
-              exists(
-                db
-                  .select()
-                  .from(rental)
-                  .where(
-                    and(
-                      eq(rental.carId, cars.id),
-                      eq(rental.isComplete, false),
-                    ),
-                  ),
-              ),
-            ),
-          )
+          .where(whereClause)
           .orderBy(sortProp)
           .limit(pageSize)
           .offset((page - 1) * pageSize);
+
         const [{ count }] = await db
           .select({ count: sql<number>`count(*)` })
           .from(cars)
-          .where(
-            not(
-              exists(
-                db
-                  .select()
-                  .from(rental)
-                  .where(
-                    and(
-                      eq(rental.carId, cars.id),
-                      eq(rental.isComplete, false),
-                    ),
-                  ),
-              ),
-            ),
-          );
+          .where(whereClause);
+
         const carIds = carRows.reduce((acc: number[], curr) => {
           acc.push(curr.id);
           return acc;
@@ -263,6 +299,55 @@ carApp
           },
         };
         return c.json(resp);
+      } catch (error) {
+        console.error(error);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
+    },
+  )
+  .get(
+    "/vehicle/:id",
+    zValidator(
+      "param",
+      z.object({
+        id: z.coerce.number().int().min(1),
+      }),
+    ),
+    async (c) => {
+      try {
+        const db = c.get("db");
+        const { id } = c.req.valid("param");
+        
+        // Get car details
+        const carRow = await db.select().from(cars).where(eq(cars.id, id));
+        if (carRow.length == 0) {
+          return c.json({ message: "Car Not Found" }, 404);
+        }
+        
+        // Get car pictures
+        const picsRows = await db
+          .select({
+            id: carPics.id,
+            url: carPics.url,
+            isCover: carPics.isCover,
+          })
+          .from(carPics)
+          .where(eq(carPics.carId, id));
+
+        const car = carRow[0];
+        const vehicleWithPics: AvailableCars = {
+          id: car.id,
+          distanceUsed: car.distanceUsed,
+          brand: car.brand,
+          model: car.model,
+          year: car.year,
+          fuelType: car.fuelType,
+          transmission: car.transmission,
+          seats: car.seats,
+          pics: picsRows,
+        };
+
+        return c.json(vehicleWithPics);
       } catch (error) {
         console.error(error);
         return c.json({ message: "Internal Server Error" }, 500);
