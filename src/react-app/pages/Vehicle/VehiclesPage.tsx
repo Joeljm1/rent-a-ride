@@ -34,14 +34,16 @@ export default function VehiclesPage() {
   // Update URL and reload data when filters change
   const handleFiltersChange = (newFilters: FilterState) => {
     setFilters(newFilters);
-    
+
     const params = new URLSearchParams();
     params.set("page", "1"); // Reset to first page when filters change
 
     if (newFilters.brand) params.set("brand", newFilters.brand);
     if (newFilters.fuelType) params.set("fuelType", newFilters.fuelType);
-    if (newFilters.transmission) params.set("transmission", newFilters.transmission);
-    if (newFilters.minSeats > 1) params.set("minSeats", newFilters.minSeats.toString());
+    if (newFilters.transmission)
+      params.set("transmission", newFilters.transmission);
+    if (newFilters.minSeats > 1)
+      params.set("minSeats", newFilters.minSeats.toString());
     if (newFilters.sortBy !== "newest") params.set("sortBy", newFilters.sortBy);
     if (newFilters.search) params.set("search", newFilters.search);
 

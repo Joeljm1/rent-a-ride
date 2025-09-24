@@ -243,7 +243,25 @@ carApp
 
         const whereClause = and(...filterConditions);
 
-        const carRows = await db
+        // const carRows = await db
+        //   .select()
+        //   .from(cars)
+        //   .where(whereClause)
+        //   .orderBy(sortProp)
+        //   .limit(pageSize)
+        //   .offset((page - 1) * pageSize);
+        //
+        // const [{ count }] = await db
+        //   .select({ count: sql<number>`count(*)` })
+        //   .from(cars)
+        //   .where(whereClause);
+
+        const prom1 = db
+          .select({ count: sql<number>`count(*)` })
+          .from(cars)
+          .where(whereClause);
+
+        const prom2 = db
           .select()
           .from(cars)
           .where(whereClause)
@@ -251,10 +269,7 @@ carApp
           .limit(pageSize)
           .offset((page - 1) * pageSize);
 
-        const [{ count }] = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(cars)
-          .where(whereClause);
+        const [[{ count }], carRows] = await Promise.all([prom1, prom2]);
 
         const carIds = carRows.reduce((acc: number[], curr) => {
           acc.push(curr.id);
@@ -317,13 +332,13 @@ carApp
       try {
         const db = c.get("db");
         const { id } = c.req.valid("param");
-        
+
         // Get car details
         const carRow = await db.select().from(cars).where(eq(cars.id, id));
         if (carRow.length == 0) {
           return c.json({ message: "Car Not Found" }, 404);
         }
-        
+
         // Get car pictures
         const picsRows = await db
           .select({
