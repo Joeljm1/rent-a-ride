@@ -1,6 +1,6 @@
 import { VehicleCard } from "./VehicleCard";
-import { Button } from "./ui/button";
-import type { AvailableCars } from "../../worker/types";
+import { Button } from "../../components/ui/button";
+import type { AvailableCars } from "../../../worker/types";
 
 interface VehicleGridProps {
   vehicles: AvailableCars[];

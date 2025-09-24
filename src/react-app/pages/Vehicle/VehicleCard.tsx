@@ -6,16 +6,16 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "./ui/card";
+} from "../../components/ui/card";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "./ui/carousel";
-import type { AvailableCars } from "../../worker/types";
-import BaseURL from "../../../BaseURL.ts";
+} from "../../components/ui/carousel";
+import type { AvailableCars } from "../../../worker/types";
+import BaseURL from "../../../../BaseURL.ts";
 
 interface VehicleCardProps {
   vehicle: AvailableCars;

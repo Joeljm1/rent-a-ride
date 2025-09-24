@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
-import { VehicleGrid } from "../components/VehicleGrid";
-import { VehicleFilters, type FilterState } from "../components/VehicleFilters";
-import type { CarList } from "../../worker/types";
+import { VehicleGrid } from "../Vehicle/VehicleGrid";
+import { VehicleFilters, type FilterState } from "../Vehicle/VehicleFilters";
+import type { CarList } from "../../../worker/types";
 
 export default function VehiclesPage() {
   const cars = useLoaderData() as CarList;

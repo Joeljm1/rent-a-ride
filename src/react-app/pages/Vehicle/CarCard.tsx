@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader } from "./ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "../../components/ui/card";
 
 export function CarCard({
   title,

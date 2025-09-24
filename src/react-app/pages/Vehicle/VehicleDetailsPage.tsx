@@ -6,19 +6,19 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
+} from "../../components/ui/card";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "../components/ui/carousel";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Separator } from "../components/ui/separator";
-import type { AvailableCars } from "../../worker/types";
-import BaseURL from "../../../BaseURL";
+} from "../../components/ui/carousel";
+import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
+import { Separator } from "../../components/ui/separator";
+import type { AvailableCars } from "../../../worker/types";
+import BaseURL from "../../../../BaseURL";
 
 export default function VehicleDetailsPage() {
   const { id } = useParams<{ id: string }>();

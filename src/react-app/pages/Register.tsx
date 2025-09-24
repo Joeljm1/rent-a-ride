@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { authClient } from "../lib/auth-client";
-import BaseURL from "../../BaseURL";
-import "./Register.css";
+import { authClient } from "../../lib/auth-client";
+import BaseURL from "../../../BaseURL";
+import "../../react-app/Register.css";
 
 interface userInfo {
   name: string;

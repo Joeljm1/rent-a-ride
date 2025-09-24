@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { authClient } from "../lib/auth-client";
+import { authClient } from "../../lib/auth-client";
 import { useLocation } from "react-router";
-import BaseURL from "../../BaseURL";
+import BaseURL from "../../../BaseURL";
 
 interface LoginInfo {
   email: string;
@@ -124,28 +124,28 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="w-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {location.state?.message ? (
-          <div className="justify-center text-red-500">
+          <div className="justify-center text-red-500 dark:text-red-400">
             {location.state.message}
           </div>
         ) : (
           ""
         )}
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md dark:shadow-lg p-8 border dark:border-gray-700">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-2">
               Welcome Back
             </h1>
-            <p className="text-gray-600">Sign in to your car rental account</p>
+            <p className="text-gray-600 dark:text-gray-300">Sign in to your car rental account</p>
           </div>
 
           <form className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
+              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/50 rounded-lg p-4 flex items-center space-x-3">
                 <svg
-                  className="w-5 h-5 text-red-500 flex-shrink-0"
+                  className="w-5 h-5 text-red-500 dark:text-red-300 flex-shrink-0"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
@@ -181,19 +181,19 @@ export default function Login() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2"
               >
                 Email Address
               </label>
               <input
                 id="email"
                 type="email"
-                className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors dark:bg-gray-800 dark:text-gray-50 dark:placeholder-gray-400 ${
                   validationErrors.email && touched.email
-                    ? "border-red-500 bg-red-50"
+                    ? "border-red-500 bg-red-50 dark:border-red-500 dark:bg-red-900/30"
                     : loginInfo.email && !validationErrors.email
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-300"
+                      ? "border-green-500 bg-green-50 dark:border-green-500 dark:bg-green-900/30"
+                      : "border-gray-300 dark:border-gray-600"
                 }`}
                 placeholder="Enter your email address"
                 value={loginInfo.email}
@@ -203,7 +203,7 @@ export default function Login() {
                 required
               />
               {validationErrors.email && touched.email && (
-                <div className="flex items-center space-x-2 mt-2 text-red-600">
+                <div className="flex items-center space-x-2 mt-2 text-red-600 dark:text-red-300">
                   <svg
                     className="w-4 h-4 flex-shrink-0"
                     viewBox="0 0 20 20"
@@ -223,19 +223,19 @@ export default function Login() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2"
               >
                 Password
               </label>
               <input
                 id="password"
                 type="password"
-                className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors dark:bg-gray-800 dark:text-gray-50 dark:placeholder-gray-400 ${
                   validationErrors.password && touched.password
-                    ? "border-red-500 bg-red-50"
+                    ? "border-red-500 bg-red-50 dark:border-red-500 dark:bg-red-900/30"
                     : loginInfo.password && !validationErrors.password
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-300"
+                      ? "border-green-500 bg-green-50 dark:border-green-500 dark:bg-green-900/30"
+                      : "border-gray-300 dark:border-gray-600"
                 }`}
                 placeholder="Enter your password"
                 value={loginInfo.password}
@@ -245,7 +245,7 @@ export default function Login() {
                 required
               />
               {validationErrors.password && touched.password && (
-                <div className="flex items-center space-x-2 mt-2 text-red-600">
+                <div className="flex items-center space-x-2 mt-2 text-red-600 dark:text-red-300">
                   <svg
                     className="w-4 h-4 flex-shrink-0"
                     viewBox="0 0 20 20"
@@ -267,7 +267,7 @@ export default function Login() {
               className={`w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white transition-all duration-200 ${
                 isLoading
                   ? "bg-blue-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
               }`}
               onClick={signIn}
               disabled={isLoading}
@@ -284,19 +284,19 @@ export default function Login() {
           </form>
 
           <div className="mt-6 text-center space-y-2">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Don't have an account?{" "}
               <a
                 href="/register"
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
               >
                 Create one
               </a>
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               <a
                 href="/forgot-password"
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
               >
                 Forgot your password?
               </a>
