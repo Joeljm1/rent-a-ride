@@ -29,6 +29,20 @@
       "when": 1757349147718,
       "tag": "0003_loose_cardiac",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1759325890727,
+      "tag": "0004_lowly_wraith",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1759326502939,
+      "tag": "0005_equal_killer_shrike",
+      "breakpoints": true
     }
   ]
 }

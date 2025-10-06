@@ -9,7 +9,7 @@ import type {
 import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
-import { cars, carPics, rental } from "../db/schema";
+import { cars, carPics, rental, users } from "../db/schema";
 import {
   and,
   eq,
@@ -27,8 +27,7 @@ import { Hono } from "hono";
 const carApp = new Hono<{
   Bindings: CloudflareBindings;
   Variables: Variables;
-}>();
-carApp
+}>()
   .post(
     "/addCar",
     zValidator(
@@ -51,6 +50,9 @@ carApp
       const user = c.get("user");
       if (user === null) {
         return c.json({ message: "UnAuthorized" }, 401);
+      }
+      if (!user.emailVerified) {
+        return c.json({ message: "Please verify your email first" }, 401);
       }
       const body = await c.req.parseBody();
       const pics: CarPics[] = [];
@@ -105,56 +107,6 @@ carApp
     },
   )
 
-  // .get("/", async (c) => {
-  //   const db = c.get("db");
-  //   const rows = await db
-  //     .select()
-  //     .from(cars)
-  //     .where(
-  //       not(
-  //         exists(
-  //           db
-  //             .select()
-  //             .from(rental)
-  //             .where(
-  //               and(eq(rental.carId, cars.id), eq(rental.isComplete, false)),
-  //             ),
-  //         ),
-  //       ),
-  //     )
-  //     .innerJoin(carPics, eq(carPics.carId, cars.id));
-  //   const availableCars: Record<number, AvailableCars> = {};
-  //
-  //   rows.forEach((row) => {
-  //     if (!availableCars[row.cars.id]) {
-  //       availableCars[row.cars.id] = {
-  //         id: row.cars.id,
-  //         distanceUsed: row.cars.distanceUsed,
-  //         brand: row.cars.brand,
-  //         model: row.cars.model,
-  //         year: row.cars.year,
-  //         fuelType: row.cars.fuelType,
-  //         transmission: row.cars.transmission,
-  //         seats: row.cars.seats,
-  //         pics: [
-  //           {
-  //             id: row.carPics.id,
-  //             url: row.carPics.url,
-  //             isCover: row.carPics.isCover,
-  //           },
-  //         ],
-  //       };
-  //     } else {
-  //       availableCars[row.cars.id].pics.push({
-  //         id: row.carPics.id,
-  //         url: row.carPics.url,
-  //         isCover: row.carPics.isCover,
-  //       });
-  //     }
-  //   });
-  //   return c.json(availableCars);
-  // })
-
   .get(
     "/vehicleList",
     zValidator(
@@ -193,7 +145,11 @@ carApp
                 .select()
                 .from(rental)
                 .where(
-                  and(eq(rental.carId, cars.id), eq(rental.isComplete, false)),
+                  and(
+                    eq(rental.carId, cars.id),
+                    eq(rental.isComplete, false),
+                    eq(cars.status, "available"),
+                  ),
                 ),
             ),
           ),
@@ -225,7 +181,7 @@ carApp
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let sortProp: any = null;
+        let sortProp: any = desc(cars.year);
         switch (sortBy) {
           case "newest":
             sortProp = desc(cars.year);
@@ -242,19 +198,6 @@ carApp
         }
 
         const whereClause = and(...filterConditions);
-
-        // const carRows = await db
-        //   .select()
-        //   .from(cars)
-        //   .where(whereClause)
-        //   .orderBy(sortProp)
-        //   .limit(pageSize)
-        //   .offset((page - 1) * pageSize);
-        //
-        // const [{ count }] = await db
-        //   .select({ count: sql<number>`count(*)` })
-        //   .from(cars)
-        //   .where(whereClause);
 
         const prom1 = db
           .select({ count: sql<number>`count(*)` })
@@ -276,6 +219,7 @@ carApp
           return acc;
         }, []);
 
+        //TODO: could optimize prev query to remove this
         const picsRows: AvailableCarPicsWithCarID[] = await db
           .select({
             id: carPics.id,
@@ -431,6 +375,91 @@ carApp
       console.error(error);
       return c.json({ message: "Internal Server Error" }, 500);
     }
-  });
-
+  })
+  .get(
+    "/contact:id",
+    zValidator("param", z.object({ id: z.coerce.number().int().min(1) })),
+    async (c) => {
+      try {
+        const db = c.get("db");
+        const email = await db
+          .select({ email: users.email })
+          .from(cars)
+          .innerJoin(users, eq(users.id, cars.userId))
+          .where(eq(cars.id, c.req.valid("param").id));
+        if (email.length == 0) {
+          return c.json({ message: "Car Not Found" }, 404);
+        }
+        return c.json({ email: email[0].email });
+      } catch (err) {
+        console.error(err);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
+    },
+  )
+  .get(
+    "/myCars",
+    zValidator(
+      "query",
+      z.object({
+        type: z.enum(["all", "rented", "free"]).default("all"),
+      }),
+    ),
+    async (c) => {
+      const user = c.get("user");
+      if (user === null) {
+        return c.json({ message: "UnAuthorized" }, 401);
+      }
+      const db = c.get("db");
+      const filters = [eq(cars.userId, user.id)];
+      switch (c.req.valid("query").type) {
+        case "rented":
+          filters.push(eq(cars.status, "unavailable"));
+          break;
+        case "free":
+          filters.push(eq(cars.status, "available"));
+          break;
+      }
+      const carRows = await db
+        .select()
+        .from(cars)
+        .innerJoin(carPics, eq(cars.id, carPics.carId))
+        // .leftJoin(rental, eq(cars.id, rental.carId))
+        .where(and(...filters));
+      const carRec: Record<
+        number,
+        AvailableCars & { status: "available" | "unavailable" | "renting" }
+      > = {};
+      carRows.forEach(({ cars: car, carPics: pic }) => {
+        if (!(car.id in carRec)) {
+          carRec[car.id] = {
+            id: car.id,
+            distanceUsed: car.distanceUsed,
+            brand: car.brand,
+            model: car.model,
+            year: car.year,
+            fuelType: car.fuelType,
+            transmission: car.transmission,
+            seats: car.seats,
+            status: car.status as "available" | "unavailable" | "renting",
+            pics: [
+              {
+                id: pic.id,
+                url: pic.url,
+                isCover: pic.isCover,
+              },
+            ],
+          };
+        } else {
+          carRec[car.id].pics.push({
+            id: pic.id,
+            url: pic.url,
+            isCover: pic.isCover,
+          });
+        }
+      });
+      return c.json(Object.values(carRec));
+    },
+  );
+// carApp.post("/rent");
 export default carApp;

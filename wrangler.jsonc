@@ -58,11 +58,11 @@
 			"database_name": "db",
 			"database_id": "bb853119-b3f2-4f72-9e50-a114e9650526"
 		},
-		{
-			"binding": "my_db",
-			"database_name": "my-db",
-			"database_id": "10f93562-50c9-49de-b7ff-87f74fff654e"
-		}
+		// {
+		// 	"binding": "my_db",
+		// 	"database_name": "my-db",
+		// 	"database_id": "10f93562-50c9-49de-b7ff-87f74fff654e"
+		// }
 	],
 	"kv_namespaces": [
 		{

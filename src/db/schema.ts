@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import { sqliteTable, text, integer, check } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -71,20 +72,30 @@ export const jwkss = sqliteTable("jwkss", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
-export const cars = sqliteTable("cars", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  distanceUsed: integer().notNull(),
-  description: text(),
-  brand: text("brand").notNull(),
-  model: text("model").notNull(),
-  year: integer("year").notNull(),
-  fuelType: text("fuel_type").notNull(),
-  transmission: text("transmission").notNull(),
-  seats: integer("seats").notNull(),
-});
+export const cars = sqliteTable(
+  "cars",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    distanceUsed: integer().notNull(),
+    description: text(),
+    brand: text("brand").notNull(),
+    model: text("model").notNull(),
+    year: integer("year").notNull(),
+    fuelType: text("fuel_type").notNull(),
+    transmission: text("transmission").notNull(),
+    seats: integer("seats").notNull(),
+    status: text("status").default("available"),
+  },
+  (table) => [
+    check(
+      "status_check",
+      sql`${table.status} in ('available','unavailable','renting')`,
+    ),
+  ],
+);
 
 export const rental = sqliteTable("rental", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -116,6 +127,7 @@ export const carPics = sqliteTable("carPics", {
   isCover: integer("is_cover", { mode: "boolean" })
     .$defaultFn(() => false)
     .notNull(),
+  // im tried of joins gonna denormalize
 });
 
 export const schema = {

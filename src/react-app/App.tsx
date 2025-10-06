@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router";
+import client from "./lib/client.ts";
 import "/index.css";
 import Home from "./pages/Home.tsx";
 import Register from "./pages/Register.tsx";
@@ -51,21 +52,17 @@ export const router = createBrowserRouter([
         element: <VehiclesPage />,
         loader: async ({ request }) => {
           const url = new URL(request.url);
-          let page = parseInt(url.searchParams.get("page") || "1");
-          let pageSize = parseInt(url.searchParams.get("pageSize") || "2");
 
-          if (isNaN(page)) {
-            page = 1;
-          }
-          if (isNaN(pageSize)) {
-            pageSize = 10;
-          }
+          type qp = Parameters<
+            Awaited<typeof client.api.cars.vehicleList.$get>
+          >[0];
 
-          const queryParams = new URLSearchParams({
-            page: page.toString(),
-            pageSize: pageSize.toString(),
-          });
+          const queryParams: qp = {
+            query: {},
+          };
 
+          const page = url.searchParams.get("page");
+          const pageSize = url.searchParams.get("pageSize");
           const brand = url.searchParams.get("brand");
           const fuelType = url.searchParams.get("fuelType");
           const transmission = url.searchParams.get("transmission");
@@ -73,24 +70,26 @@ export const router = createBrowserRouter([
           const sortBy = url.searchParams.get("sortBy");
           const search = url.searchParams.get("search");
 
-          if (brand) queryParams.set("brand", brand);
-          if (fuelType) queryParams.set("fuelType", fuelType);
-          if (transmission) queryParams.set("transmission", transmission);
-          if (minSeats) queryParams.set("minSeats", minSeats);
-          if (sortBy) queryParams.set("sortBy", sortBy);
-          if (search) queryParams.set("search", search);
+          if (page) queryParams["query"]["page"] = page;
+          if (pageSize) queryParams["query"]["pageSize"] = pageSize;
+          if (brand) queryParams["query"]["brand"] = brand;
+          if (fuelType) queryParams["query"]["fuelType"] = fuelType;
+          if (transmission) queryParams["query"]["transmission"] = transmission;
+          if (minSeats) queryParams["query"]["minSeats"] = minSeats;
+          if (sortBy) queryParams["query"]["sortBy"] = sortBy;
+          if (search) queryParams["query"]["search"] = search;
 
-          const resp = await fetch(
-            `/api/cars/vehicleList?${queryParams.toString()}`
-          );
-          if (!resp.ok) {
+          const re = await client.api.cars.vehicleList.$get({
+            query: { ...queryParams["query"] },
+          });
+          if (!re.ok) {
             //TODO: handle thrown error
             console.log("error");
             throw new Response("Failed to fetch vehicle list", {
-              status: resp.status,
+              status: re.status,
             });
           }
-          return resp.json();
+          return re.json();
         },
       },
       {
