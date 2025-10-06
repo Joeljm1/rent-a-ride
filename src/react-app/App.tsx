@@ -106,10 +106,6 @@ export const router = createBrowserRouter([
             element: <Dashboard />,
           },
           {
-            path: "dashboard",
-            element: <Dashboard />,
-          },
-          {
             path: "vehicles",
             element: <ManageVehicles />,
           },

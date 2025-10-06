@@ -3,8 +3,6 @@ import HostBookings from "./HostBookings";
 import HostHeader from "./HostHeader";
 
 export default function Dashboard() {
-  
-
   return (
     <div>
         <div className="max-w-7xl mx-auto px-6 lg:px-8 pl-8 lg:pl-16 space-y-8">

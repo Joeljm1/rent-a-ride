@@ -7,7 +7,7 @@ export default function HostLayout(): React.ReactElement {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks: NavLinkItem[] = [
-    { to: "dashboard", label: "Dashboard", icon: "📊" },
+    { to: "/host", label: "Dashboard", icon: "📊" },
     { to: "vehicles", label: "My Vehicles", icon: "🚗" },
     { to: "upload", label: "Add Vehicle", icon: "➕" },
     { to: "bookings", label: "Bookings", icon: "📅" },
@@ -31,6 +31,7 @@ export default function HostLayout(): React.ReactElement {
               <NavLink
                 key={link.to}
                 to={link.to}
+                end={link.to === "/host"}
                 className={({ isActive }) =>
                   `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                     isActive
