@@ -41,7 +41,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-900 shadow-md dark:shadow-lg transition-colors">
+    <header className="bg-white dark:bg-gray-900 transition-colors">
       <div className="max-w-7xl mx-auto px-4 flex justify-between items-center h-16">
         <Link to="/" className="flex items-center">
           <img src={imageUrl} alt="RentARide Logo" className="h-8 mr-2" />

@@ -10,6 +10,12 @@ import Contact from "./pages/Contact.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import VehiclesPage from "./pages/Vehicle/VehiclesPage.tsx";
 import VehicleDetailsPage from "./pages/Vehicle/VehicleDetailsPage.tsx";
+import HostLayout from "./pages/Host/HostLayout.tsx";
+import Dashboard from "./pages/Host/Dashboard.tsx";
+import ManageVehicles from "./pages/Host/ManageVehicles.tsx";
+import HostBookings from "./pages/Host/HostBookings.tsx";
+import HostEarnings from "./pages/Host/HostEarnings.tsx";
+import HostProfile from "./pages/Host/HostProfile.tsx";
 
 export const router = createBrowserRouter([
   {
@@ -75,7 +81,7 @@ export const router = createBrowserRouter([
           if (search) queryParams.set("search", search);
 
           const resp = await fetch(
-            `/api/cars/vehicleList?${queryParams.toString()}`,
+            `/api/cars/vehicleList?${queryParams.toString()}`
           );
           if (!resp.ok) {
             //TODO: handle thrown error
@@ -91,7 +97,41 @@ export const router = createBrowserRouter([
         path: "/vehicles/:id",
         element: <VehicleDetailsPage />,
       },
-      { path: "*", element: <NotFound /> }
+      {
+        path: "host",
+        element: <HostLayout />,
+        children: [
+          {
+            index: true,
+            element: <Dashboard />,
+          },
+          {
+            path: "dashboard",
+            element: <Dashboard />,
+          },
+          {
+            path: "vehicles",
+            element: <ManageVehicles />,
+          },
+          {
+            path: "upload",
+            element: <FileUploader />,
+          },
+          {
+            path: "bookings",
+            element: <HostBookings />,
+          },
+          {
+            path: "earnings",
+            element: <HostEarnings />,
+          },
+          {
+            path: "profile",
+            element: <HostProfile />,
+          },
+        ],
+      },
+      { path: "*", element: <NotFound /> },
     ],
   },
 ]);

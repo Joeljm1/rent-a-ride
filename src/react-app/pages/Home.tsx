@@ -11,7 +11,7 @@ export default function Home() {
           <span className="font-semibold">#RentARide</span> connects you with quality cars at unbeatable prices.
         </p>
         <Link to="/vehicles">
-          <Button className="bg-white text-blue-600 dark:bg-blue-500 dark:text-gray-100 border border-solid dark:border-gray-300 font-semibold px-6 rounded-md hover:bg-gray-100 dark:hover:bg-blue-600 transition cursor-pointer">
+          <Button className="bg-white text-blue-600 dark:bg-blue-500 dark:text-gray-100 font-semibold px-6 rounded-md hover:bg-gray-100 dark:hover:bg-blue-600 transition cursor-pointer">
             Find Your Ride Today
           </Button>
         </Link>
