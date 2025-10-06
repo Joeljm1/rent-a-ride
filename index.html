@@ -7,6 +7,24 @@
     <link rel="icon" type="image/webp" href="/src/react-app/assets/RentARideLogo.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RentARide</title>
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('theme');
+          if (stored === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else if (stored === 'light') {
+            document.documentElement.classList.remove('dark');
+          } else {
+            // No explicit preference saved — use OS preference
+            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (prefersDark) document.documentElement.classList.add('dark');
+          } 
+        } catch (e) {
+          console.warn('Could not apply saved theme', e);
+        }
+      })();
+    </script>
   </head>
 
   <body>

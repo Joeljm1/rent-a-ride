@@ -6,7 +6,19 @@ import imageUrl from "../assets/RentARideLogo.webp";
 
 export default function Header() {
   const session = useContext(AuthContext);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark') return true;
+      if (stored === 'light') return false;
+    } catch {
+      // ignore
+    }
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
 
   useEffect(() => {
     const htmlElement = document.documentElement;
@@ -14,6 +26,11 @@ export default function Header() {
       htmlElement.classList.add("dark");
     } else {
       htmlElement.classList.remove("dark");
+    }
+    try {
+      localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    } catch {
+      // ignore write errors
     }
   }, [isDarkMode]);
 
@@ -99,7 +116,7 @@ export default function Header() {
         </nav>
         {/* Dark Mode Toggle */}
         <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
+          onClick={() => setIsDarkMode((v) => !v)}
           className="ml-4 rounded-full p-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors"
           aria-label="Toggle dark mode"
         >
