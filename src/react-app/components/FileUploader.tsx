@@ -26,6 +26,7 @@ interface CarFormData {
   description: string;
   fuelType: string;
   transmission: string;
+  mileage: string;
 }
 
 export default function FileUploader() {
@@ -39,6 +40,7 @@ export default function FileUploader() {
     description: "",
     fuelType: "petrol",
     transmission: "manual",
+    mileage: "10",
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

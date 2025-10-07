@@ -34,6 +34,14 @@ interface CarList {
   metaData: metaData;
 }
 
+interface MyAvailableCars extends AvailableCars {
+  status: "available" | "unavailable" | "renting" | "requesting";
+}
+
+interface MyCarList {
+  data: MyAvailableCars[];
+  metaData: metaData;
+}
 interface CarPics {
   file: File;
   // isCover: boolean;
@@ -59,4 +67,6 @@ export type {
   AvailableCarPicsWithCarID,
   CarPicWithID,
   CarList,
+  MyAvailableCars,
+  MyCarList,
 };

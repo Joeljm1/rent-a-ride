@@ -1,1 +1,2 @@
 - frontend show list with newest first by default
+- price Per day 

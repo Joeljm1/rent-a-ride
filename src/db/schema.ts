@@ -87,31 +87,63 @@ export const cars = sqliteTable(
     fuelType: text("fuel_type").notNull(),
     transmission: text("transmission").notNull(),
     seats: integer("seats").notNull(),
+    // be careful as this is technically redundant data
+    //available unavailable renting'
     status: text("status").default("available"),
+    mileage: integer().notNull(),
+    pricePerDay: integer("price_per_day").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .$defaultFn(() => new Date())
+      .notNull(),
   },
   (table) => [
     check(
       "status_check",
-      sql`${table.status} in ('available','unavailable','renting')`,
+      sql`${table.status} in ('available','unavailable','renting')`,//may be requesting status to??
     ),
   ],
 );
 
-export const rental = sqliteTable("rental", {
+// export const rental = sqliteTable("rental", {
+//   id: integer("id").primaryKey({ autoIncrement: true }),
+//   carId: integer("carid")
+//     .notNull()
+//     .references(() => cars.id, { onDelete: "cascade" }),
+//   rentedBy: text("rentedBy")
+//     .references(() => users.id)
+//     .notNull(),
+//   rentedAt: integer("rentedAt", { mode: "timestamp" }).notNull(),
+//   expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
+
+//   isComplete: integer("isComplete", { mode: "boolean" })
+//     .$defaultFn(() => false)
+//     .notNull(),
+// });
+
+export const requests = sqliteTable("requests", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  carId: integer("carid")
+  carId: integer("carId")
     .notNull()
     .references(() => cars.id, { onDelete: "cascade" }),
-  rentedBy: text("rentedBy")
+  requestedBy: text("requestedBy")
     .references(() => users.id)
     .notNull(),
-  rentedAt: integer("rentedAt", { mode: "timestamp" }).notNull(),
-  expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
+  requestedAt: integer("requestedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  rentedFrom: integer("rentedFrom", { mode: "timestamp" }).notNull(),
+  rentedTo: integer("rentedTo", { mode: "timestamp" }).notNull(),
+  reqMessage: text("message").notNull(),
+  rejectReason: text("rejectReason"),
+  // pending, approved, rejected
+  status: text("status").default("pending"),
+  completedAt: integer("completedAt", { mode: "timestamp" }),
+},
+(table) => [
+  check(
+    "status_check",
+    sql`${table.status} in ('pending','approved','rejected', 'cancelled', 'completed')`,
+  ),
+]); 
 
-  isComplete: integer("isComplete", { mode: "boolean" })
-    .$defaultFn(() => false)
-    .notNull(),
-});
 
 export const carPics = sqliteTable("carPics", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -127,7 +159,6 @@ export const carPics = sqliteTable("carPics", {
   isCover: integer("is_cover", { mode: "boolean" })
     .$defaultFn(() => false)
     .notNull(),
-  // im tried of joins gonna denormalize
 });
 
 export const schema = {
@@ -138,5 +169,5 @@ export const schema = {
   jwkss,
   cars,
   carPics,
-  rental,
+  requests,
 };

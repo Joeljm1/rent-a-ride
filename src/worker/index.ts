@@ -4,12 +4,13 @@ import { cors } from "hono/cors";
 import { createAuth } from "../lib/auth";
 import { users } from "../db/schema";
 import carApp from "./vehicles";
+import carReq from "./rental.ts";
 import type { CloudflareBindings } from "./env";
 import type { Variables } from "./types";
 
 const app = new Hono<{ Bindings: CloudflareBindings; Variables: Variables }>()
   .use(
-    "/api/auth/**",
+    "/api/**",
     cors({
       origin: [
         "http://localhost:5173",
@@ -63,6 +64,11 @@ const app = new Hono<{ Bindings: CloudflareBindings; Variables: Variables }>()
 
   .get("/api/name", (c) => c.json({ name: "test" }))
 
-  .route("/api/cars", carApp);
+  .route("/api/cars", carApp)
+  .route("/api/req", carReq)
+  .onError((err, c) => {
+    console.error(`${err}`);
+    return c.json({ message: "Internal Server Error" }, 500);
+  });
 export default app;
 export type AppType = typeof app;

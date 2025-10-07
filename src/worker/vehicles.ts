@@ -5,11 +5,13 @@ import type {
   CarPicWithID,
   AvailableCarPicsWithCarID,
   CarList,
+  MyAvailableCars,
+  MyCarList,
 } from "./types";
 import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
-import { cars, carPics, rental, users } from "../db/schema";
+import { cars, carPics, requests, users } from "../db/schema";
 import {
   and,
   eq,
@@ -18,11 +20,27 @@ import {
   inArray,
   sql,
   desc,
+  asc,
   gte,
   like,
   or,
+  SQL,
 } from "drizzle-orm";
 import { Hono } from "hono";
+import { primaryKey } from "drizzle-orm/gel-core";
+import { ms } from "zod/v4/locales";
+
+const carSort = [
+  "newest",
+  "oldest",
+  "lowMileage",
+  "highMileage",
+  "lowDistance",
+  "highDistance",
+] as const;
+
+const carTransmission = ["all", "manual", "automatic"] as const;
+const carType = ["all", "rented", "free", "requesting"];
 
 const carApp = new Hono<{
   Bindings: CloudflareBindings;
@@ -44,66 +62,77 @@ const carApp = new Hono<{
         fuelType: z.string(),
         transmission: z.string(),
         Cover: z.coerce.number().int(),
+        mileage: z.coerce.number(),
+        pricePerDay: z.coerce.number().int(),
       }),
     ),
     async (c) => {
-      const user = c.get("user");
-      if (user === null) {
-        return c.json({ message: "UnAuthorized" }, 401);
-      }
-      if (!user.emailVerified) {
-        return c.json({ message: "Please verify your email first" }, 401);
-      }
-      const body = await c.req.parseBody();
-      const pics: CarPics[] = [];
-      for (let i = 0; i < 5; i++) {
-        const nextFile = body[`file_${i}`] as File;
-        if (nextFile === undefined) {
-          break;
+      try {
+        const user = c.get("user");
+        if (user === null) {
+          return c.json({ message: "Unauthorized" }, 401);
         }
-        const cb: CarPics = {
-          file: nextFile,
-          // isCover: `${i}` === body["Cover"],
-        };
-        pics.push(cb);
-      }
-      // console.log(pics);
-      const db = c.get("db");
-      const carIds = await db
-        .insert(cars)
-        .values({
-          userId: user.id,
-          brand: (body["brand"] as string).toLowerCase(),
-          description: body["description"] as string,
-          distanceUsed: parseInt(body["distance"] as string),
-          fuelType: (body["fuelType"] as string).toLowerCase(),
-          model: (body["model"] as string).toLowerCase(),
-          seats: parseInt(body["seats"] as string),
-          transmission: (body["transmission"] as string).toLowerCase(),
-          year: parseInt(body["year"] as string),
-        })
-        .returning({ id: cars.id });
-      const carId = carIds[0]; // cause only 1 inserted
-      const r2Obj = await Promise.all(
-        pics.map((pic) =>
-          c.env.R2.put(`${carId.id}_${pic.file.name}`, pic.file),
-        ),
-      );
-      console.log(`r2Obj: ${r2Obj}`);
-      const carPriceRows = r2Obj
-        .map((obj, i) => {
-          if (obj?.key === undefined) {
-            return;
+        if (!user.emailVerified) {
+          return c.json({ message: "Please verify your email first" }, 401);
+        }
+        //not validating data here
+        const body = await c.req.parseBody();
+        const pics: CarPics[] = [];
+        for (let i = 0; i < 5; i++) {
+          const nextFile = body[`file_${i}`] as File;
+          if (nextFile === undefined) {
+            break;
           }
-          return {
-            carId: carId.id,
-            url: obj?.key,
-            isCover: `${i}` === (body["Cover"] as string),
+          const cb: CarPics = {
+            file: nextFile,
+            // isCover: `${i}` === body["Cover"],
           };
-        })
-        .filter((carPriceRow) => carPriceRow !== undefined);
-      await db.insert(carPics).values([...carPriceRows]);
-      return c.json({ message: "Created" }, 201);
+          pics.push(cb);
+        }
+        // console.log(pics);
+        const db = c.get("db");
+        const carIds = await db
+          .insert(cars)
+          .values({
+            userId: user.id,
+            brand: (body["brand"] as string).toLowerCase(),
+            description: body["description"] as string,
+            distanceUsed: parseInt(body["distance"] as string),
+            fuelType: (body["fuelType"] as string).toLowerCase(),
+            model: (body["model"] as string).toLowerCase(),
+            seats: parseInt(body["seats"] as string),
+            transmission: (body["transmission"] as string).toLowerCase(),
+            year: parseInt(body["year"] as string),
+            mileage: parseInt(body["mileage"] as string),
+            pricePerDay: 1000, // temporary price
+          })
+          .returning({ id: cars.id });
+        const carId = carIds[0]; // cause only 1 inserted
+        const r2Obj = await Promise.all(
+          pics.map((pic) =>
+            c.env.R2.put(`${carId.id}_${pic.file.name}`, pic.file),
+          ),
+        );
+        const carPriceRows = r2Obj
+          // @ts-ignore
+          .map((obj, i) => {
+            if (obj?.key === undefined) {
+              return;
+            }
+            return {
+              carId: carId.id,
+              url: obj?.key,
+              isCover: `${i}` === (body["Cover"] as string),
+            };
+          })
+          // @ts-ignore
+          .filter((carPriceRow) => carPriceRow !== undefined);
+        await db.insert(carPics).values([...carPriceRows]);
+        return c.json({ message: "Created" }, 201);
+      } catch (err) {
+        console.error(err);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
     },
   )
 
@@ -114,12 +143,10 @@ const carApp = new Hono<{
       z.object({
         page: z.coerce.number().min(1).default(1),
         pageSize: z.coerce.number().min(1).max(100).default(10),
-        sortBy: z
-          .enum(["newest", "oldest", "lowMileage", "highMileage"])
-          .default("newest"),
+        sortBy: z.enum(carSort).default("newest"),
         brand: z.string().optional(),
         fuelType: z.string().optional(),
-        transmission: z.string().optional(),
+        transmission: z.enum(carTransmission).default("all"),
         minSeats: z.coerce.number().min(1).optional(),
         search: z.string().optional(),
       }),
@@ -138,22 +165,24 @@ const carApp = new Hono<{
           search,
         } = c.req.valid("query");
 
-        const filterConditions = [
-          not(
-            exists(
-              db
-                .select()
-                .from(rental)
-                .where(
-                  and(
-                    eq(rental.carId, cars.id),
-                    eq(rental.isComplete, false),
-                    eq(cars.status, "available"),
-                  ),
-                ),
-            ),
-          ),
-        ];
+        // const filterConditions = [
+        //   not(
+        //     exists(
+        //       db
+        //         .select()
+        //         .from(requests)
+        //         .where(
+        //           and(
+        //             eq(requests.carId, cars.id),
+        //             eq(requests.status, "approved"),
+        //             eq(cars.status, "available"),
+        //           ),
+        //         ),
+        //     ),
+        //   ),
+        // ];
+
+        const filterConditions = [eq(cars.status, "available")];
 
         if (brand) {
           filterConditions.push(eq(cars.brand, brand.toLowerCase()));
@@ -162,11 +191,8 @@ const carApp = new Hono<{
         if (fuelType) {
           filterConditions.push(eq(cars.fuelType, fuelType.toLowerCase()));
         }
-
-        if (transmission) {
-          filterConditions.push(
-            eq(cars.transmission, transmission.toLowerCase()),
-          );
+        if (transmission != "all") {
+          filterConditions.push(eq(cars.transmission, transmission));
         }
 
         if (minSeats) {
@@ -180,21 +206,25 @@ const carApp = new Hono<{
           );
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let sortProp: any = desc(cars.year);
+        let sortProp: SQL<unknown> = desc(cars.year);
         switch (sortBy) {
           case "newest":
             sortProp = desc(cars.year);
             break;
           case "oldest":
-            sortProp = cars.year;
+            sortProp = asc(cars.year);
             break;
           case "lowMileage":
-            sortProp = cars.distanceUsed;
+            sortProp = asc(cars.mileage);
             break;
           case "highMileage":
-            sortProp = desc(cars.distanceUsed);
+            sortProp = desc(cars.mileage);
             break;
+          case "lowDistance":
+            sortProp = asc(cars.distanceUsed);
+            break;
+          case "highDistance":
+            sortProp = desc(cars.distanceUsed);
         }
 
         const whereClause = and(...filterConditions);
@@ -402,64 +432,219 @@ const carApp = new Hono<{
     zValidator(
       "query",
       z.object({
-        type: z.enum(["all", "rented", "free"]).default("all"),
+        type: z.enum(carType).default("all"),
+        page: z.coerce.number().min(1).default(1),
+        pageSize: z.coerce.number().min(1).max(100).default(10),
+        sortBy: z.enum(carSort).default("newest"),
+        brand: z.string().toLowerCase().optional(),
+        fuelType: z
+          .enum(["all", "petrol", "diesel", "electric", "hybrid"])
+          .default("all"),
+        transmission: z.enum(carTransmission).default("all"),
+        minSeats: z.coerce.number().min(1).default(1),
+        search: z.string().optional(),
       }),
     ),
     async (c) => {
+      try {
+        const {
+          page,
+          pageSize,
+          sortBy,
+          brand,
+          fuelType,
+          transmission,
+          minSeats,
+          search,
+          type,
+        } = c.req.valid("query");
+        const user = c.get("user");
+        if (user === null) {
+          return c.json({ message: "UnAuthorized" }, 401);
+        }
+        const db = c.get("db");
+        const filters = [eq(cars.userId, user.id)];
+        switch (type) {
+          case "rented":
+            filters.push(eq(cars.status, "unavailable"));
+            break;
+          case "free":
+            filters.push(eq(cars.status, "available"));
+            break;
+        }
+        let sort: SQL<unknown> = desc(cars.year);
+        switch (sortBy) {
+          case "oldest":
+            sort = asc(cars.year);
+            break;
+          case "newest":
+            sort = desc(cars.year);
+            break;
+          case "lowMileage":
+            sort = asc(cars.year);
+            break;
+        }
+        if (brand) {
+          filters.push(eq(cars.brand, brand));
+        }
+
+        if (transmission != "all") {
+          filters.push(eq(cars.transmission, transmission));
+        }
+
+        if (fuelType != "all") {
+          filters.push(eq(cars.fuelType, fuelType));
+        }
+
+        filters.push(gte(cars.seats, minSeats));
+
+        if (search) {
+          const searchTerm = `%${search.toLowerCase()}%`;
+          filters.push(
+            or(like(cars.brand, searchTerm), like(cars.model, searchTerm))!,
+          );
+        }
+        const carRowsProm = db
+          .select()
+          .from(cars)
+          .innerJoin(carPics, eq(cars.id, carPics.carId))
+          // .leftJoin(rental, eq(cars.id, rental.carId))
+          .where(and(...filters))
+          .orderBy(sort);
+        const countProm = db
+          .select({ count: sql<number>`count(*)` })
+          .from(cars)
+          .where(and(...filters))
+          .limit(pageSize)
+          .offset((page - 1) * pageSize);
+
+        const [carRows, [{ count }]] = await Promise.all([
+          carRowsProm,
+          countProm,
+        ]);
+        const carRec: Record<number, MyAvailableCars> = {};
+        carRows.forEach(({ cars: car, carPics: pic }) => {
+          if (!(car.id in carRec)) {
+            carRec[car.id] = {
+              id: car.id,
+              distanceUsed: car.distanceUsed,
+              brand: car.brand,
+              model: car.model,
+              year: car.year,
+              fuelType: car.fuelType,
+              transmission: car.transmission,
+              seats: car.seats,
+              status: car.status as
+                | "available"
+                | "unavailable"
+                | "renting"
+                | "requesting",
+              pics: [
+                {
+                  id: pic.id,
+                  url: pic.url,
+                  isCover: pic.isCover,
+                },
+              ],
+            };
+          } else {
+            carRec[car.id].pics.push({
+              id: pic.id,
+              url: pic.url,
+              isCover: pic.isCover,
+            });
+          }
+        });
+        const returnData: MyCarList = {
+          data: Object.values(carRec),
+          metaData: {
+            page: page,
+            pageSize: pageSize,
+            totalPage: Math.ceil(count / pageSize),
+          },
+        };
+        return c.json(returnData);
+      } catch (err) {
+        console.error(err);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
+    },
+  )
+  .get("/myBrands", async (c) => {
+    try {
       const user = c.get("user");
       if (user === null) {
         return c.json({ message: "UnAuthorized" }, 401);
       }
       const db = c.get("db");
-      const filters = [eq(cars.userId, user.id)];
-      switch (c.req.valid("query").type) {
-        case "rented":
-          filters.push(eq(cars.status, "unavailable"));
-          break;
-        case "free":
-          filters.push(eq(cars.status, "available"));
-          break;
-      }
-      const carRows = await db
-        .select()
+      const rows = await db
+        .selectDistinct({ name: cars.brand })
         .from(cars)
-        .innerJoin(carPics, eq(cars.id, carPics.carId))
-        // .leftJoin(rental, eq(cars.id, rental.carId))
-        .where(and(...filters));
-      const carRec: Record<
-        number,
-        AvailableCars & { status: "available" | "unavailable" | "renting" }
-      > = {};
-      carRows.forEach(({ cars: car, carPics: pic }) => {
-        if (!(car.id in carRec)) {
-          carRec[car.id] = {
-            id: car.id,
-            distanceUsed: car.distanceUsed,
-            brand: car.brand,
-            model: car.model,
-            year: car.year,
-            fuelType: car.fuelType,
-            transmission: car.transmission,
-            seats: car.seats,
-            status: car.status as "available" | "unavailable" | "renting",
-            pics: [
-              {
-                id: pic.id,
-                url: pic.url,
-                isCover: pic.isCover,
-              },
-            ],
-          };
-        } else {
-          carRec[car.id].pics.push({
-            id: pic.id,
-            url: pic.url,
-            isCover: pic.isCover,
-          });
+        .where(eq(cars.userId, user.id));
+      const brands = rows.reduce((acc: string[], curr) => {
+        acc.push(curr.name);
+        return acc;
+      }, []);
+      return c.json(brands);
+    } catch (err) {
+      console.error(err);
+      return c.json({ message: "Internal Server Error" }, 500);
+    }
+  })
+
+  .post(
+    "/rent",
+    zValidator(
+      "json",
+      z.object({
+        id: z.coerce.number().int(),
+        from: z.coerce.date(),
+        to: z.coerce.date(),
+        msg: z.string(),
+      }),
+    ),
+    async (c) => {
+      try {
+        const user = c.get("user");
+        const db = c.get("db");
+        if (user === null) {
+          return c.json({ message: "UnAuthorized" }, 401);
         }
-      });
-      return c.json(Object.values(carRec));
+        const { id, from, to, msg } = c.req.valid("json");
+        const car = await db
+          .select()
+          .from(cars)
+          .where(and(eq(cars.id, id), eq(cars.status, "available")))
+          .limit(1);
+        if (car.length == 0) {
+          return c.json({ message: "Car Not Found or Unavailable" }, 404);
+        }
+        if (car[0].userId === user.id) {
+          return c.json({ message: "Cannot rent your own car" }, 400);
+        }
+        try {
+          // not sure if id needed
+          const reqID = await db.insert(requests)
+          .values({
+            carId: id,
+            requestedBy: user.id,
+            rentedFrom: from,
+            rentedTo: to,
+            reqMessage: msg,
+          }).returning({ reqID: requests.id });
+        } catch (e) {
+          console.error(`Error inserting to db :${e}`);
+          return c.json(
+            { message: "Failed to create request, try again" },
+            500,
+          );
+        }
+        return c.json({ message: "Rental Requested" }, 200);
+      } catch (err) {
+        console.error(err);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
     },
   );
-// carApp.post("/rent");
+
 export default carApp;

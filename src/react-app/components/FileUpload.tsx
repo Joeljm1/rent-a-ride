@@ -11,9 +11,9 @@ interface FileUploadProps {
 export default function FileUpload({ 
   files, 
   setFiles, 
-  maxFiles = 5,
   maxSize = 5 * 1024 * 1024 // 5MB
 }: FileUploadProps) {
+  const maxFiles = 5;
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
