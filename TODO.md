@@ -12,3 +12,7 @@
 - Add Car fileuploader price per day added
 - BaseUrl localhost change cheythitt ind... Vendappol deployment mode itto
 - Earnings and manage vehicle indaaki ind
+- frontend show list with newest first by default
+- price Per day 
+- mileage
+- GPS option

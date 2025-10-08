@@ -27,10 +27,8 @@ import {
   SQL,
 } from "drizzle-orm";
 import { Hono } from "hono";
-import { primaryKey } from "drizzle-orm/gel-core";
-import { ms } from "zod/v4/locales";
 
-const carSort = [
+export const carSort = [
   "newest",
   "oldest",
   "lowMileage",
@@ -39,8 +37,8 @@ const carSort = [
   "highDistance",
 ] as const;
 
-const carTransmission = ["all", "manual", "automatic"] as const;
-const carType = ["all", "rented", "free", "requesting"];
+export const carTransmission = ["all", "manual", "automatic"] as const;
+export const carType = ["all", "rented", "free", "requesting"];
 
 const carApp = new Hono<{
   Bindings: CloudflareBindings;
@@ -64,6 +62,7 @@ const carApp = new Hono<{
         Cover: z.coerce.number().int(),
         mileage: z.coerce.number(),
         pricePerDay: z.coerce.number().int(),
+        gps:z.boolean(),
       }),
     ),
     async (c) => {
@@ -78,6 +77,7 @@ const carApp = new Hono<{
         // }
         //not validating data here
         const body = await c.req.parseBody();
+        const {brand,model,distance,year,seats,description,fuelType,transmission,Cover,mileage,pricePerDay, gps } = c.req.valid("form");
         const pics: CarPics[] = [];
         for (let i = 0; i < 5; i++) {
           const nextFile = body[`file_${i}`] as File;
@@ -96,17 +96,17 @@ const carApp = new Hono<{
           .insert(cars)
           .values({
             userId: user.id,
-            brand: (body["brand"] as string).toLowerCase(),
-            description: body["description"] as string,
-            distanceUsed: parseInt(body["distance"] as string),
-            fuelType: (body["fuelType"] as string).toLowerCase(),
-            model: (body["model"] as string).toLowerCase(),
-            seats: parseInt(body["seats"] as string),
-            transmission: (body["transmission"] as string).toLowerCase(),
-            year: parseInt(body["year"] as string),
-            mileage: parseInt(body["mileage"] as string),
-            pricePerDay: parseInt(body["pricePerDay"] as string),
-            createdAt: new Date(),
+            brand: brand.toLowerCase(),
+            description: description,
+            distanceUsed: distance,
+            fuelType: fuelType.toLowerCase(),
+            model: model.toLowerCase(),
+            seats: seats,
+            transmission: transmission.toLowerCase(),
+            year: year,
+            mileage: mileage,
+            pricePerDay: pricePerDay, // temporary price
+            gps: gps,
           })
           .returning({ id: cars.id });
         const carId = carIds[0]; // cause only 1 inserted

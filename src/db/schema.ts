@@ -95,11 +95,12 @@ export const cars = sqliteTable(
     createdAt: integer("created_at", { mode: "timestamp" })
       .$defaultFn(() => new Date())
       .notNull(),
+    gps: integer("gps", { mode: "boolean" }),
   },
   (table) => [
     check(
       "status_check",
-      sql`${table.status} in ('available','unavailable','renting')`,//may be requesting status to??
+      sql`${table.status} in ('available','unavailable','renting')`, //may be requesting status to??
     ),
   ],
 );
@@ -120,30 +121,34 @@ export const cars = sqliteTable(
 //     .notNull(),
 // });
 
-export const requests = sqliteTable("requests", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  carId: integer("carId")
-    .notNull()
-    .references(() => cars.id, { onDelete: "cascade" }),
-  requestedBy: text("requestedBy")
-    .references(() => users.id)
-    .notNull(),
-  requestedAt: integer("requestedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-  rentedFrom: integer("rentedFrom", { mode: "timestamp" }).notNull(),
-  rentedTo: integer("rentedTo", { mode: "timestamp" }).notNull(),
-  reqMessage: text("message").notNull(),
-  rejectReason: text("rejectReason"),
-  // pending, approved, rejected
-  status: text("status").default("pending"),
-  completedAt: integer("completedAt", { mode: "timestamp" }),
-},
-(table) => [
-  check(
-    "status_check",
-    sql`${table.status} in ('pending','approved','rejected', 'cancelled', 'completed')`,
-  ),
-]); 
-
+export const requests = sqliteTable(
+  "requests",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    carId: integer("carId")
+      .notNull()
+      .references(() => cars.id, { onDelete: "cascade" }),
+    requestedBy: text("requestedBy")
+      .references(() => users.id)
+      .notNull(),
+    requestedAt: integer("requestedAt", { mode: "timestamp" })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    rentedFrom: integer("rentedFrom", { mode: "timestamp" }).notNull(),
+    rentedTo: integer("rentedTo", { mode: "timestamp" }).notNull(),
+    reqMessage: text("message").notNull(),
+    rejectReason: text("rejectReason"),
+    // pending, approved, rejected
+    status: text("status").default("pending"),
+    completedAt: integer("completedAt", { mode: "timestamp" }),
+  },
+  (table) => [
+    check(
+      "status_check",
+      sql`${table.status} in ('pending','approved','rejected', 'cancelled', 'completed')`,
+    ),
+  ],
+);
 
 export const carPics = sqliteTable("carPics", {
   id: integer("id").primaryKey({ autoIncrement: true }),
