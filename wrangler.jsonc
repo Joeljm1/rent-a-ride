@@ -56,7 +56,8 @@
 		{
 			"binding": "DB",
 			"database_name": "db",
-			"database_id": "bb853119-b3f2-4f72-9e50-a114e9650526"
+			"database_id": "bb853119-b3f2-4f72-9e50-a114e9650526",
+			"migrations_dir": "./drizzle"
 			// "database_id": "575e95cc-1d0a-40b9-9ff2-be5d73d1ad78"
 		},
 		// {

@@ -63,3 +63,65 @@ export interface ProfileData {
   addressVerified: boolean;
   backgroundCheck: boolean;
 }
+
+export interface VehiclePic {
+  id: number;
+  url: string;
+  isCover: boolean;
+}
+
+export interface Vehicle {
+  id: number;
+  distanceUsed: number;
+  brand: string;
+  model: string;
+  year: number;
+  fuelType: string;
+  transmission: string;
+  seats: number;
+  status: "available" | "unavailable" | "renting" | "requesting";
+  pics: VehiclePic[];
+}
+
+export interface VehicleStats {
+  total: number;
+  available: number;
+  rented: number;
+  unavailable: number;
+}
+
+export interface Transaction {
+  id: number;
+  date: string;
+  booking: string;
+  customer: string;
+  vehicle?: string;
+  amount: number;
+  status: "completed" | "pending" | "processing" | "refunded";
+  type: "booking" | "payout" | "refund";
+}
+
+export interface EarningsStats {
+  totalEarnings: number;
+  monthlyEarnings: number;
+  pendingPayout: number;
+  averagePerBooking: number;
+  totalBookings: number;
+}
+
+export interface PayoutInfo {
+  nextPayoutDate: string | null;
+  pendingAmount: number;
+  payoutMethod: string;
+}
+
+export interface EditFormData {
+  brand: string;
+  model: string;
+  year: number;
+  distanceUsed: number;
+  fuelType: string;
+  transmission: string;
+  seats: number;
+  status: "available" | "unavailable" | "renting" | "requesting";
+}

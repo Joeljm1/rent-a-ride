@@ -72,9 +72,10 @@ const carApp = new Hono<{
         if (user === null) {
           return c.json({ message: "Unauthorized" }, 401);
         }
-        if (!user.emailVerified) {
-          return c.json({ message: "Please verify your email first" }, 401);
-        }
+        // TODO: Re-enable email verification once email sending is working
+        // if (!user.emailVerified) {
+        //   return c.json({ message: "Please verify your email first" }, 401);
+        // }
         //not validating data here
         const body = await c.req.parseBody();
         const pics: CarPics[] = [];
@@ -104,7 +105,8 @@ const carApp = new Hono<{
             transmission: (body["transmission"] as string).toLowerCase(),
             year: parseInt(body["year"] as string),
             mileage: parseInt(body["mileage"] as string),
-            pricePerDay: 1000, // temporary price
+            pricePerDay: parseInt(body["pricePerDay"] as string),
+            createdAt: new Date(),
           })
           .returning({ id: cars.id });
         const carId = carIds[0]; // cause only 1 inserted
@@ -130,8 +132,15 @@ const carApp = new Hono<{
         await db.insert(carPics).values([...carPriceRows]);
         return c.json({ message: "Created" }, 201);
       } catch (err) {
-        console.error(err);
-        return c.json({ message: "Internal Server Error" }, 500);
+        console.error("Error adding car:", err);
+        if (err instanceof Error) {
+          console.error("Error message:", err.message);
+          console.error("Error stack:", err.stack);
+        }
+        return c.json({ 
+          message: "Internal Server Error",
+          error: err instanceof Error ? err.message : String(err)
+        }, 500);
       }
     },
   )
@@ -642,6 +651,67 @@ const carApp = new Hono<{
         return c.json({ message: "Rental Requested" }, 200);
       } catch (err) {
         console.error(err);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
+    },
+  )
+  .put(
+    "/update/:id",
+    zValidator("param", z.object({ id: z.coerce.number().int().min(1) })),
+    zValidator(
+      "json",
+      z.object({
+        brand: z.string().optional(),
+        model: z.string().optional(),
+        year: z.number().int().optional(),
+        distanceUsed: z.number().int().optional(),
+        fuelType: z.string().optional(),
+        transmission: z.string().optional(),
+        seats: z.number().int().optional(),
+        status: z.enum(["available", "unavailable", "renting", "requesting"]).optional(),
+      }),
+    ),
+    async (c) => {
+      try {
+        const user = c.get("user");
+        if (user === null) {
+          return c.json({ message: "Unauthorized" }, 401);
+        }
+
+        const { id } = c.req.valid("param");
+        const updateData = c.req.valid("json");
+        const db = c.get("db");
+
+        // Check if car exists and belongs to user
+        const car = await db
+          .select()
+          .from(cars)
+          .where(eq(cars.id, id))
+          .limit(1);
+
+        if (car.length === 0) {
+          return c.json({ message: "Car not found" }, 404);
+        }
+
+        if (car[0].userId !== user.id) {
+          return c.json({ message: "Unauthorized: Not your vehicle" }, 403);
+        }
+
+        // Update the car
+        await db
+          .update(cars)
+          .set({
+            ...updateData,
+            brand: updateData.brand?.toLowerCase(),
+            model: updateData.model?.toLowerCase(),
+            fuelType: updateData.fuelType?.toLowerCase(),
+            transmission: updateData.transmission?.toLowerCase(),
+          })
+          .where(eq(cars.id, id));
+
+        return c.json({ message: "Vehicle updated successfully" }, 200);
+      } catch (err) {
+        console.error("Error updating vehicle:", err);
         return c.json({ message: "Internal Server Error" }, 500);
       }
     },

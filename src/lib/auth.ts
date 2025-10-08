@@ -51,7 +51,7 @@ function createAuth(
       {
         emailAndPassword: {
           enabled: true,
-          requireEmailVerification: true,
+          requireEmailVerification: false,
 
           password: {
             hash: hash,

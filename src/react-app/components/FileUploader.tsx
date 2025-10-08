@@ -27,6 +27,7 @@ interface CarFormData {
   fuelType: string;
   transmission: string;
   mileage: string;
+  pricePerDay: string;
 }
 
 export default function FileUploader() {
@@ -41,6 +42,7 @@ export default function FileUploader() {
     fuelType: "petrol",
     transmission: "manual",
     mileage: "10",
+    pricePerDay: "",
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -66,6 +68,11 @@ export default function FileUploader() {
     if (!formData.seats.trim()) newErrors.seats = "Seats is required";
     if (!formData.description.trim())
       newErrors.description = "Description is required";
+    if (!formData.pricePerDay.trim()) {
+      newErrors.pricePerDay = "Price per day is required";
+    } else if (isNaN(parseInt(formData.pricePerDay.trim())) || parseInt(formData.pricePerDay.trim()) <= 0) {
+      newErrors.pricePerDay = "Price must be a positive number";
+    }
 
     if (files.length === 0) {
       newErrors.images = "At least one image is required";
@@ -174,16 +181,28 @@ export default function FileUploader() {
           />
         </div>
 
-        <FormInput
-          label="Number of Seats"
-          type="number"
-          value={formData.seats}
-          onChange={(e) => handleInputChange("seats", e.target.value)}
-          error={errors.seats}
-          min="1"
-          max="50"
-          required
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormInput
+            label="Number of Seats"
+            type="number"
+            value={formData.seats}
+            onChange={(e) => handleInputChange("seats", e.target.value)}
+            error={errors.seats}
+            min="1"
+            max="50"
+            required
+          />
+
+          <FormInput
+            label="Price Per Day (₹)"
+            type="number"
+            value={formData.pricePerDay}
+            onChange={(e) => handleInputChange("pricePerDay", e.target.value)}
+            error={errors.pricePerDay}
+            min="1"
+            required
+          />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormSelect
