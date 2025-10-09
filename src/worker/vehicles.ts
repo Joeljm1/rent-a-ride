@@ -62,7 +62,7 @@ const carApp = new Hono<{
         Cover: z.coerce.number().int(),
         mileage: z.coerce.number(),
         pricePerDay: z.coerce.number().int(),
-        gps:z.boolean(),
+        gps: z.boolean(),
       }),
     ),
     async (c) => {
@@ -77,7 +77,20 @@ const carApp = new Hono<{
         // }
         //not validating data here
         const body = await c.req.parseBody();
-        const {brand,model,distance,year,seats,description,fuelType,transmission,Cover,mileage,pricePerDay, gps } = c.req.valid("form");
+        const {
+          brand,
+          model,
+          distance,
+          year,
+          seats,
+          description,
+          fuelType,
+          transmission,
+          Cover,
+          mileage,
+          pricePerDay,
+          gps,
+        } = c.req.valid("form");
         const pics: CarPics[] = [];
         for (let i = 0; i < 5; i++) {
           const nextFile = body[`file_${i}`] as File;
@@ -137,10 +150,13 @@ const carApp = new Hono<{
           console.error("Error message:", err.message);
           console.error("Error stack:", err.stack);
         }
-        return c.json({ 
-          message: "Internal Server Error",
-          error: err instanceof Error ? err.message : String(err)
-        }, 500);
+        return c.json(
+          {
+            message: "Internal Server Error",
+            error: err instanceof Error ? err.message : String(err),
+          },
+          500,
+        );
       }
     },
   )
@@ -633,14 +649,16 @@ const carApp = new Hono<{
         }
         try {
           // not sure if id needed
-          const reqID = await db.insert(requests)
-          .values({
-            carId: id,
-            requestedBy: user.id,
-            rentedFrom: from,
-            rentedTo: to,
-            reqMessage: msg,
-          }).returning({ reqID: requests.id });
+          const reqID = await db
+            .insert(requests)
+            .values({
+              carId: id,
+              requestedBy: user.id,
+              rentedFrom: from,
+              rentedTo: to,
+              reqMessage: msg,
+            })
+            .returning({ reqID: requests.id });
         } catch (e) {
           console.error(`Error inserting to db :${e}`);
           return c.json(
@@ -655,7 +673,7 @@ const carApp = new Hono<{
       }
     },
   )
-  .put(
+  .patch(
     "/update/:id",
     zValidator("param", z.object({ id: z.coerce.number().int().min(1) })),
     zValidator(
@@ -668,7 +686,8 @@ const carApp = new Hono<{
         fuelType: z.string().optional(),
         transmission: z.string().optional(),
         seats: z.number().int().optional(),
-        status: z.enum(["available", "unavailable", "renting", "requesting"]).optional(),
+        status: z.enum(["available", "unavailable", "renting"]).optional(),
+        gps: z.boolean(),
       }),
     ),
     async (c) => {
@@ -681,24 +700,39 @@ const carApp = new Hono<{
         const { id } = c.req.valid("param");
         const updateData = c.req.valid("json");
         const db = c.get("db");
+        //Check if changed code has problems
 
         // Check if car exists and belongs to user
+        // const car = await db
+        //   .select()
+        //   .from(cars)
+        //   .where(eq(cars.id, id))
+        //   .limit(1);
+        //
+        // if (car.length === 0) {
+        //   return c.json({ message: "Car not found" }, 404);
+        // }
+        //
+        // if (car[0].userId !== user.id) {
+        //   return c.json({ message: "Unauthorized: Not your vehicle" }, 403);
+        // }
+        //
+        // // Update the car
+        // await db
+        //   .update(cars)
+        //   .set({
+        //     ...updateData,
+        //     brand: updateData.brand?.toLowerCase(),
+        //     model: updateData.model?.toLowerCase(),
+        //     fuelType: updateData.fuelType?.toLowerCase(),
+        //     transmission: updateData.transmission?.toLowerCase(),
+        //   })
+        //   .where(eq(cars.id, id));
+
+        // Check if car exists and belongs to user
+
+        // need to check if this will be same as above one
         const car = await db
-          .select()
-          .from(cars)
-          .where(eq(cars.id, id))
-          .limit(1);
-
-        if (car.length === 0) {
-          return c.json({ message: "Car not found" }, 404);
-        }
-
-        if (car[0].userId !== user.id) {
-          return c.json({ message: "Unauthorized: Not your vehicle" }, 403);
-        }
-
-        // Update the car
-        await db
           .update(cars)
           .set({
             ...updateData,
@@ -707,8 +741,12 @@ const carApp = new Hono<{
             fuelType: updateData.fuelType?.toLowerCase(),
             transmission: updateData.transmission?.toLowerCase(),
           })
-          .where(eq(cars.id, id));
-
+          .where(and(eq(cars.id, id), eq(cars.userId, user.id)))
+          .returning();
+        if (car.length === 0) {
+          return c.json({ message: "Car not found" }, 404);
+        }
+        // Update the car
         return c.json({ message: "Vehicle updated successfully" }, 200);
       } catch (err) {
         console.error("Error updating vehicle:", err);

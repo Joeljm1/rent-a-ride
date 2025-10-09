@@ -238,17 +238,22 @@ const carReq = new Hono<{
         if (req[0].requests.status != "pending") {
           return c.json({ message: "Request already handled" }, 400);
         }
+
+        if (req[0].cars.status != "pending") {
+          return c.json({ message: "Car not available" }, 400);
+        }
         if (action == "approve") {
-          //update req status to approved and car status to rented
           try {
-            const up = await db
-              .update(requests)
-              .set({ status: "approved" })
-              .where(eq(requests.id, id));
-            const up2 = await db
-              .update(cars)
-              .set({ status: "rented" })
-              .where(eq(cars.id, req[0].cars.id));
+            await db.transaction(async (tx) => {
+              await tx
+                .update(requests)
+                .set({ status: "approved" })
+                .where(eq(cars.id, id));
+              await tx
+                .update(cars)
+                .set({ status: "renting" })
+                .where(eq(cars.id, req[0].cars.id));
+            });
           } catch (e) {
             console.error(`Error updating db :${e}`);
             return c.json(
@@ -260,7 +265,7 @@ const carReq = new Hono<{
         } else {
           //reject
           try {
-            const up = await db
+            await db
               .update(requests)
               .set({ status: "rejected", rejectReason: reason || "" })
               .where(eq(requests.id, id));
