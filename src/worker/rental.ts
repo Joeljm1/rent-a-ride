@@ -16,6 +16,7 @@ const carReq = new Hono<{
   Bindings: CloudflareBindings;
   Variables: Variables;
 }>()
+  // add a request to a car if available
   .post(
     "/rent",
     zValidator(
@@ -213,6 +214,7 @@ const carReq = new Hono<{
     zValidator(
       "json",
       z.object({
+        // request id
         id: z.coerce.number().int(),
         action: z.enum(["approve", "reject"]), //??
         reason: z.string().optional(),
@@ -239,7 +241,7 @@ const carReq = new Hono<{
           return c.json({ message: "Request already handled" }, 400);
         }
 
-        if (req[0].cars.status != "pending") {
+        if (req[0].cars.status != "available") {
           return c.json({ message: "Car not available" }, 400);
         }
         if (action == "approve") {
@@ -251,7 +253,7 @@ const carReq = new Hono<{
                 .where(eq(cars.id, id));
               await tx
                 .update(cars)
-                .set({ status: "renting" })
+                .set({ status: "approved" })
                 .where(eq(cars.id, req[0].cars.id));
             });
           } catch (e) {
@@ -262,7 +264,7 @@ const carReq = new Hono<{
             );
           }
           return c.json({ message: "Request Approved" }, 200);
-        } else {
+        } else if (action == "reject") {
           //reject
           try {
             await db
@@ -277,13 +279,107 @@ const carReq = new Hono<{
             );
           }
           return c.json({ message: "Request Rejected" }, 200);
+        } else {
+          return c.json({ message: "Request invalid" }, 400);
         }
       } catch (err) {
         console.error(err);
         return c.json({ message: "Internal Server Error" }, 500);
       }
     },
-  );
+  )
+  .post(
+    "/sendCar",
+    zValidator(
+      "json",
+      z.object({
+        // car id
+        id: z.coerce.number().int(),
+        gpsId: z.string().optional(),
+      }),
+    ),
+    async (c) => {
+      try {
+        const user = c.get("user");
+        if (user == null) {
+          return c.json({ message: "UnAuthorized" }, 401);
+        }
+        const { id,gpsId } = c.req.valid("json");
+        const db = c.get("db");
+        // let carID=await db
+        //   .update(cars)
+        //   .set({ status: "renting" })
+        //   .where(
+        //     and(
+        //       eq(cars.id, id),
+        //       eq(cars.userId, user.id),
+        //       eq(cars.status, "approved"),
+        //     ),
+        //   ).returning({ id: cars.id });
+        let carID: { id: number }[] = [];
+        await db.transaction(async (tx) => {
+          carID = await tx
+            .update(cars)
+            .set({ status: "renting" })
+            .where(
+            and(
+              eq(cars.id, id),
+              eq(cars.userId, user.id),
+              eq(cars.status, "approved"),
+            ),
+          ).returning({ id: cars.id });
+          if(carID.length>0 && gpsId){
+            await tx
+            .update(requests)
+            .set({ gpsId: gpsId })
+            .where(
+              and(
+                eq(requests.carId, id),
+                eq(requests.status, "approved"),
+              ),
+            );
+          }
+        });
+        if (carID.length == 0) {
+          return c.json({ message: "Car Not Found or Invalid Status" }, 404);
+        }
+        return c.json({ message: "Car is sent for rent" }, 200);
+      } catch (err) {
+        console.error(err);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
+    },
+  )
+  // requests that are currently active (ie approved or renting) for my cars
+  .get("/currReq", async (c) => {
+    const user = c.get("user");
+    if (user == null) {
+      return c.json({ message: "UnAuthorized" }, 401);
+    }
+    const db = c.get("db");
+    const resp = await db.select()
+      .from(requests)
+      .innerJoin(cars, eq(requests.carId, cars.id))
+      .where(
+        and(
+          eq(cars.userId, user.id),
+          eq(requests.status, "approved"),
+        ),
+      )
+      .orderBy(desc(requests.requestedAt));
+    return c.json(resp.map((r) => ({
+      id: r.requests.id,
+      carId: r.cars.id,
+      carBrand: r.cars.brand,
+      carModel: r.cars.model,
+      //for frontend if status is approved show button to send
+      //else if status is completed show button to complete and also button to track if gps
+      status: r.cars.status,
+      startDate: r.requests.rentedFrom,
+      endDate: r.requests.rentedTo,
+      gps: r.cars.gps,
+  })), 200);
+  });
 export default carReq;
 
 // .get("/allMyReq", async (c) => {
