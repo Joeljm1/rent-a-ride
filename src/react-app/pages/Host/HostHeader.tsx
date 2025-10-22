@@ -21,8 +21,8 @@ export default function HostHeader(): React.ReactElement {
         try {
             setLoading(true);
 
-            // Fetch vehicles count
-            const vehiclesResponse = await fetch("/api/cars/myCars?pageSize=1000", {
+            // Fetch vehicles count (max pageSize is 100)
+            const vehiclesResponse = await fetch("/api/cars/myCars?pageSize=100", {
                 credentials: "include",
             });
 
@@ -41,8 +41,6 @@ export default function HostHeader(): React.ReactElement {
                 activeBookings = vehiclesData.data?.filter(
                     (v: { status: string }) => v.status === "renting" || v.status === "requesting"
                 ).length || 0;
-            } else {
-                console.error("Vehicles response not OK:", await vehiclesResponse.text());
             }
 
             let monthlyEarnings = 0;
@@ -52,8 +50,6 @@ export default function HostHeader(): React.ReactElement {
                 const earningsData = await earningsResponse.json();
                 monthlyEarnings = earningsData.monthlyEarnings || 0;
                 totalBookings = earningsData.totalBookings || 0;
-            } else {
-                console.error("Earnings response not OK:", await earningsResponse.text());
             }
 
             setStats([
