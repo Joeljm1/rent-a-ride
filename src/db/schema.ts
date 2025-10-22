@@ -100,7 +100,8 @@ export const cars = sqliteTable(
   (table) => [
     check(
       "status_check",
-      sql`${table.status} in ('available','unavailable','renting')`, //may be requesting status to??
+      // renting means car is given for rent , approved means it is approved rn
+      sql`${table.status} in ('available','unavailable','renting','approved')`,
     ),
   ],
 );
@@ -138,9 +139,10 @@ export const requests = sqliteTable(
     rentedTo: integer("rentedTo", { mode: "timestamp" }).notNull(),
     reqMessage: text("message").notNull(),
     rejectReason: text("rejectReason"),
-    // pending, approved, rejected
+    // pending, approved, rejected,cancelled,completed
     status: text("status").default("pending"),
     completedAt: integer("completedAt", { mode: "timestamp" }),
+    gpsId: text("gpsId"),// not sure
   },
   (table) => [
     check(

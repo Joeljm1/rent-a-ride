@@ -38,7 +38,7 @@ export const carSort = [
 ] as const;
 
 export const carTransmission = ["all", "manual", "automatic"] as const;
-export const carType = ["all", "rented", "free", "requesting"];
+export const carType = ["all", "free","unavailable", "renting","approved"] as const ;
 
 const carApp = new Hono<{
   Bindings: CloudflareBindings;
@@ -490,11 +490,17 @@ const carApp = new Hono<{
         const db = c.get("db");
         const filters = [eq(cars.userId, user.id)];
         switch (type) {
-          case "rented":
+          case "unavailable":
             filters.push(eq(cars.status, "unavailable"));
             break;
           case "free":
             filters.push(eq(cars.status, "available"));
+            break;
+          case "renting":
+            filters.push(eq(cars.status, "renting"));
+            break;
+          case "approved":
+            filters.push(eq(cars.status, "approved"));
             break;
         }
         let sort: SQL<unknown> = desc(cars.year);
