@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import type { EarningsStats, Transaction, PayoutInfo } from "./types";
+import client from "../../lib/client";
 
 export default function HostEarnings(): React.ReactElement {
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year">("month");
@@ -28,11 +29,11 @@ export default function HostEarnings(): React.ReactElement {
       setLoading(true);
       setError(null);
 
-      // Fetch all earnings data in parallel
+      // Fetch all earnings data in parallel using RPC client
       const [statsRes, transactionsRes, payoutRes] = await Promise.all([
-        fetch("/api/earnings/stats", { credentials: "include" }),
-        fetch("/api/earnings/transactions", { credentials: "include" }),
-        fetch("/api/earnings/payout", { credentials: "include" }),
+        client.api.earnings.stats.$get(),
+        client.api.earnings.transactions.$get(),
+        client.api.earnings.payout.$get(),
       ]);
 
       if (statsRes.status === 401 || transactionsRes.status === 401 || payoutRes.status === 401) {
@@ -42,8 +43,8 @@ export default function HostEarnings(): React.ReactElement {
       }
 
       if (!statsRes.ok || !transactionsRes.ok || !payoutRes.ok) {
-        const errorData = await statsRes.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to fetch earnings data");
+        const errorData = await statsRes.json().catch(() => ({ message: "Failed to fetch earnings data" }));
+        throw new Error("message" in errorData ? errorData.message : "Failed to fetch earnings data");
       }
 
 
@@ -52,7 +53,7 @@ export default function HostEarnings(): React.ReactElement {
       const payoutData = await payoutRes.json();
 
       setStats(statsData);
-      setTransactions(transactionsData.transactions || []);
+      setTransactions((transactionsData.transactions || []) as Transaction[]);
       setPayoutInfo(payoutData);
     } catch (err) {
       console.error("Error fetching earnings:", err);

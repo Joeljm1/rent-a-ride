@@ -123,5 +123,5 @@ export interface EditFormData {
   fuelType: string;
   transmission: string;
   seats: number;
-  status: "available" | "unavailable" | "renting" | "requesting";
+  status: "available" | "unavailable" | "renting";
 }

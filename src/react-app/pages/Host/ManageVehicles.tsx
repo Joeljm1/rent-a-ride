@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import type { Vehicle, VehicleStats, EditFormData } from "./types";
+import client from "../../lib/client";
 
 export default function ManageVehicles(): React.ReactElement {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -22,8 +23,8 @@ export default function ManageVehicles(): React.ReactElement {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/cars/myCars?pageSize=100", {
-        credentials: "include",
+      const response = await client.api.cars.myCars.$get({
+        query: { pageSize: "100" },
       });
 
       if (response.status === 401) {
@@ -33,8 +34,8 @@ export default function ManageVehicles(): React.ReactElement {
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to fetch vehicles");
+        const errorData = await response.json().catch(() => ({ message: "Failed to fetch vehicles" }));
+        throw new Error("message" in errorData ? errorData.message : "Failed to fetch vehicles");
       }
 
       const data = await response.json();
@@ -57,7 +58,7 @@ export default function ManageVehicles(): React.ReactElement {
       fuelType: vehicle.fuelType,
       transmission: vehicle.transmission,
       seats: vehicle.seats,
-      status: vehicle.status,
+      status: vehicle.status === "requesting" ? "unavailable" : vehicle.status,
     });
   };
 
@@ -71,13 +72,9 @@ export default function ManageVehicles(): React.ReactElement {
 
     setSaving(true);
     try {
-      const response = await fetch(`/api/cars/update/${editingVehicle.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(editFormData),
+      const response = await client.api.cars.update[":id"].$patch({
+        param: { id: editingVehicle.id.toString() },
+        json: editFormData,
       });
 
       if (!response.ok) {

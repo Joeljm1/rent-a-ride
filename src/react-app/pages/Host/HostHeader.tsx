@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router";
 import type { StatCard } from "./types";
 import { AuthContext } from "../../AuthContext";
+import client from "../../lib/client";
 
 export default function HostHeader(): React.ReactElement {
     const session = useContext(AuthContext);
@@ -21,15 +22,13 @@ export default function HostHeader(): React.ReactElement {
         try {
             setLoading(true);
 
-            // Fetch vehicles count (max pageSize is 100)
-            const vehiclesResponse = await fetch("/api/cars/myCars?pageSize=100", {
-                credentials: "include",
+            // Fetch vehicles count (max pageSize is 100) using RPC client
+            const vehiclesResponse = await client.api.cars.myCars.$get({
+                query: { pageSize: "100" }
             });
 
-            // Fetch earnings stats (includes bookings data)
-            const earningsResponse = await fetch("/api/earnings/stats", {
-                credentials: "include",
-            });
+            // Fetch earnings stats using RPC client
+            const earningsResponse = await client.api.earnings.stats.$get();
 
             let totalVehicles = 0;
             let activeBookings = 0;
