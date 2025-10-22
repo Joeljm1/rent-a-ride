@@ -73,6 +73,13 @@ export default function Header() {
             Cars
           </NavLink>
           <NavLink
+            to="/ai-chat"
+            style={({ isActive }) => (isActive ? activeStyle : undefined)}
+            className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition delay-150 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110"
+          >
+            AI Chat
+          </NavLink>
+          <NavLink
             to="/upload"
             style={({ isActive }) => (isActive ? activeStyle : undefined)}
             className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition delay-150 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110"

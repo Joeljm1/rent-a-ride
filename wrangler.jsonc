@@ -77,5 +77,15 @@
 			"binding": "R2",
 			"bucket_name": "rent-a-ride-files"
 		}
+	],
+	"ai": {
+		"binding": "AI",
+		"remote": true
+	},
+	"vectorize": [
+		{
+			"binding": "VECTORIZE",
+			"index_name": "vehicle-recommendations"
+		}
 	]
 }

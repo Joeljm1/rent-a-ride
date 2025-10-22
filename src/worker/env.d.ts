@@ -4,6 +4,8 @@ export interface CloudflareBindings {
   R2: R2Bucket;
   RESEND_API_KEY: string;
   BETTER_AUTH_URL: string;
+  AI: Ai;
+  VECTORIZE: Vectorize;
 }
 
 declare global {
