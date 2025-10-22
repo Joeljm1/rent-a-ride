@@ -62,7 +62,7 @@ const carApp = new Hono<{
         Cover: z.coerce.number().int(),
         mileage: z.coerce.number(),
         pricePerDay: z.coerce.number().int(),
-        gps: z.boolean(),
+        gps: z.boolean().optional().default(false),
       }),
     ),
     async (c) => {
@@ -535,13 +535,13 @@ const carApp = new Hono<{
           .innerJoin(carPics, eq(cars.id, carPics.carId))
           // .leftJoin(rental, eq(cars.id, rental.carId))
           .where(and(...filters))
-          .orderBy(sort);
+          .orderBy(sort)
+          .limit(pageSize)
+          .offset((page - 1) * pageSize);
         const countProm = db
           .select({ count: sql<number>`count(*)` })
           .from(cars)
-          .where(and(...filters))
-          .limit(pageSize)
-          .offset((page - 1) * pageSize);
+          .where(and(...filters));
 
         const [carRows, [{ count }]] = await Promise.all([
           carRowsProm,
@@ -687,7 +687,7 @@ const carApp = new Hono<{
         transmission: z.string().optional(),
         seats: z.number().int().optional(),
         status: z.enum(["available", "unavailable", "renting"]).optional(),
-        gps: z.boolean(),
+        gps: z.boolean().optional(),
       }),
     ),
     async (c) => {

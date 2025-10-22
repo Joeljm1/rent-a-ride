@@ -28,6 +28,7 @@ interface CarFormData {
   transmission: string;
   mileage: string;
   pricePerDay: string;
+  gps: boolean;
 }
 
 export default function FileUploader() {
@@ -43,6 +44,7 @@ export default function FileUploader() {
     transmission: "manual",
     mileage: "10",
     pricePerDay: "",
+    gps: false,
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -222,6 +224,19 @@ export default function FileUploader() {
             error={errors.transmission}
             required
           />
+        </div>
+
+        <div className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+          <input
+            type="checkbox"
+            id="gps"
+            checked={formData.gps}
+            onChange={(e) => setFormData((prev) => ({ ...prev, gps: e.target.checked }))}
+            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+          />
+          <label htmlFor="gps" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+            GPS Navigation System Available
+          </label>
         </div>
 
         <FormTextarea
