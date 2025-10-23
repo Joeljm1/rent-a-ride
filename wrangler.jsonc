@@ -87,5 +87,12 @@
 			"binding": "VECTORIZE",
 			"index_name": "vehicle-recommendations"
 		}
+	],
+	"workflows": [
+		{
+			"name": "vehicle-embedding",
+			"binding": "VEHICLE_EMBEDDING_WORKFLOW",
+			"class_name": "VehicleEmbeddingWorkflow"
+		}
 	]
 }

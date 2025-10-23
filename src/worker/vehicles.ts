@@ -62,7 +62,11 @@ const carApp = new Hono<{
         Cover: z.coerce.number().int(),
         mileage: z.coerce.number(),
         pricePerDay: z.coerce.number().int(),
-        gps: z.boolean().optional().default(false),
+        gps: z
+          .union([z.boolean(), z.string()])
+          .transform((val) => val === true || val === "true" || val === "on")
+          .optional()
+          .default(false),
       }),
     ),
     async (c) => {
@@ -118,10 +122,11 @@ const carApp = new Hono<{
             transmission: transmission.toLowerCase(),
             year: year,
             mileage: mileage,
-            pricePerDay: pricePerDay, // temporary price
+            pricePerDay: pricePerDay,
             gps: gps,
+            createdAt: new Date(), // Explicitly set createdAt
           })
-          .returning({ id: cars.id });
+          .returning({ id: cars.id});
         const carId = carIds[0]; // cause only 1 inserted
         const r2Obj = await Promise.all(
           pics.map((pic) =>

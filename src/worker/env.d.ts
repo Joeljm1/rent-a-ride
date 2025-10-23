@@ -6,6 +6,7 @@ export interface CloudflareBindings {
   BETTER_AUTH_URL: string;
   AI: Ai;
   VECTORIZE: Vectorize;
+  VEHICLE_EMBEDDING_WORKFLOW: Workflow;
 }
 
 declare global {

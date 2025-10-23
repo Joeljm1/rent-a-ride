@@ -2,107 +2,80 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { CloudflareBindings } from "./env";
+import { WorkflowEntrypoint, WorkflowEvent, WorkflowStep } from "cloudflare:workers";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
-const VEHICLE_DATA = [
-  {
-    id: 1,
-    description: "Toyota Camry 2022 - Luxury sedan with excellent fuel efficiency, automatic transmission, 5 seats, leather interior, GPS navigation, and advanced safety features. Perfect for business trips and comfortable family travel.",
-    brand: "Toyota",
-    model: "Camry",
-    year: 2022,
-    fuelType: "Hybrid",
-    transmission: "Automatic",
-    seats: 5,
-    pricePerDay: 75,
-    features: ["GPS", "Leather Seats", "Bluetooth", "Backup Camera", "Lane Assist"]
-  },
-  {
-    id: 2,
-    description: "Honda CR-V 2023 - Spacious SUV ideal for family trips and outdoor adventures, automatic transmission, 7 seats, all-wheel drive, excellent cargo space, and advanced safety technology.",
-    brand: "Honda",
-    model: "CR-V",
-    year: 2023,
-    fuelType: "Gasoline",
-    transmission: "Automatic",
-    seats: 7,
-    pricePerDay: 95,
-    features: ["AWD", "GPS", "Third Row Seating", "Roof Rack", "Apple CarPlay"]
-  },
-  {
-    id: 3,
-    description: "Tesla Model 3 2023 - Electric sedan with autopilot, zero emissions, instant acceleration, premium sound system, and cutting-edge technology. Great for eco-conscious city driving.",
-    brand: "Tesla",
-    model: "Model 3",
-    year: 2023,
-    fuelType: "Electric",
-    transmission: "Automatic",
-    seats: 5,
-    pricePerDay: 120,
-    features: ["Autopilot", "Premium Audio", "Glass Roof", "Supercharging", "Over-the-air Updates"]
-  },
-  {
-    id: 4,
-    description: "Ford F-150 2022 - Powerful pickup truck perfect for heavy-duty work, towing, and off-road adventures. 4x4 capability, large cargo bed, manual transmission option.",
-    brand: "Ford",
-    model: "F-150",
-    year: 2022,
-    fuelType: "Diesel",
-    transmission: "Manual",
-    seats: 5,
-    pricePerDay: 110,
-    features: ["4x4", "Towing Package", "Cargo Bed Liner", "Off-road Tires", "Heavy Duty Suspension"]
-  },
-  {
-    id: 5,
-    description: "BMW 3 Series 2023 - Premium luxury sedan with sporty performance, automatic transmission, heated seats, premium sound, and elegant design. Perfect for special occasions.",
-    brand: "BMW",
-    model: "3 Series",
-    year: 2023,
-    fuelType: "Gasoline",
-    transmission: "Automatic",
-    seats: 5,
-    pricePerDay: 140,
-    features: ["Sport Mode", "Heated Seats", "Premium Audio", "Sunroof", "Parking Assist"]
-  },
-  {
-    id: 6,
-    description: "Chevrolet Malibu 2021 - Affordable and reliable sedan with good fuel economy, automatic transmission, comfortable interior, modern safety features. Great budget option for daily use.",
-    brand: "Chevrolet",
-    model: "Malibu",
-    year: 2021,
-    fuelType: "Gasoline",
-    transmission: "Automatic",
-    seats: 5,
-    pricePerDay: 55,
-    features: ["Bluetooth", "Backup Camera", "Cruise Control", "USB Ports", "Air Conditioning"]
-  },
-  {
-    id: 7,
-    description: "Mazda CX-5 2023 - Compact SUV with excellent handling, automatic transmission, 5 seats, premium interior, good cargo space, and sporty driving dynamics.",
-    brand: "Mazda",
-    model: "CX-5",
-    year: 2023,
-    fuelType: "Gasoline",
-    transmission: "Automatic",
-    seats: 5,
-    pricePerDay: 85,
-    features: ["GPS", "Leather Seats", "Bose Audio", "Blind Spot Monitor", "Adaptive Cruise Control"]
-  },
-  {
-    id: 8,
-    description: "Volkswagen Passat 2022 - Spacious family sedan with premium features, automatic transmission, comfortable ride, large trunk, and German engineering quality.",
-    brand: "Volkswagen",
-    model: "Passat",
-    year: 2022,
-    fuelType: "Gasoline",
-    transmission: "Automatic",
-    seats: 5,
-    pricePerDay: 70,
-    features: ["GPS", "Heated Seats", "Digital Cockpit", "Parking Sensors", "Keyless Entry"]
+interface Vehicle {
+  id: number;
+  brand: string;
+  model: string;
+  year: number;
+  description?: string | null;
+  fuelType: string;
+  transmission: string;
+  seats: number;
+  pricePerDay: number;
+}
+
+type VehicleEmbeddingParams = {
+  vehicleIds?: number[];  // only process specific vehicles
+  forceRefresh?: boolean;  // re-generate even if exists
+}
+
+// Initialize vector database using Workflow (async, durable, production-ready)
+app.post("/initialize", async (c) => {
+  try {
+    if (!c.env.VEHICLE_EMBEDDING_WORKFLOW) {
+      return c.json({ error: "Workflow not configured" }, 500);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const params: VehicleEmbeddingParams = {
+      vehicleIds: body.vehicleIds,
+      forceRefresh: body.forceRefresh || false
+    };
+
+    // Trigger the workflow (returns immediately)
+    const instance = await c.env.VEHICLE_EMBEDDING_WORKFLOW.create({ params });
+    
+    return c.json({ 
+      success: true,
+      message: "Vehicle embedding process started",
+      workflowId: instance.id,
+      status: "View status at /initialize/status/" + instance.id
+    });
+  } catch (error) {
+    return c.json(
+      { error: "Failed to start workflow", details: error instanceof Error ? error.message : "Unknown error" },
+      500
+    );
   }
-];
+});
+
+// Check workflow status
+app.get("/initialize/status/:id", async (c) => {
+  try {
+    const workflowId = c.req.param("id");
+    
+    if (!c.env.VEHICLE_EMBEDDING_WORKFLOW) {
+      return c.json({ error: "Workflow not configured" }, 500);
+    }
+
+    const instance = await c.env.VEHICLE_EMBEDDING_WORKFLOW.get(workflowId);
+    
+    return c.json({
+      id: instance.id,
+      status: instance.status,
+      // Add more status details as needed
+    });
+  } catch (error) {
+    return c.json(
+      { error: "Failed to get workflow status", details: error instanceof Error ? error.message : "Unknown error" },
+      500
+    );
+  }
+});
 
 // Chat endpoint for vehicle recommendations
 app.post(
@@ -131,29 +104,81 @@ app.post(
         return c.json({ error: "Vector database not configured" }, 500);
       }
       
-      const queryEmbeddings: { data?: number[][] } = await c.env.AI.run("@cf/baai/bge-base-en-v1.5", {
+      if (!c.env.DB) {
+        return c.json({ error: "Database not configured" }, 500);
+      }
+      
+      // Generate embedding for the user's query
+      const queryEmbeddings: any = await c.env.AI.run("@cf/baai/bge-base-en-v1.5", {
         text: message,
-      }) as { data?: number[][] };
+      });
       
       if (!queryEmbeddings.data || !queryEmbeddings.data[0]) {
         return c.json({ error: "Failed to generate query embedding" }, 500);
       }
       
-      
-      
-      // System prompt for the AI
-      const systemPrompt = `
-        You are a helpful vehicle rental assistant. Your role is to recommend vehicles based on customer needs.
-        Guidelines:
-        - Use the provided vehicle context to make specific recommendations
-        - Ask clarifying questions if the user's needs are unclear (budget, number of passengers, trip type, etc.)
-        - Be friendly, concise, and helpful
-        - If no suitable vehicles are found in the context, politely explain and ask for different criteria
-        - Always mention the price per day when recommending vehicles
-        - Highlight key features that match the user's needs
-      `;
+      const queryVector = queryEmbeddings.data[0];
 
-      // Build messages array for the LLM
+      // Search for similar vehicles in the vector database
+      const searchResults = await c.env.VECTORIZE.query(queryVector, {
+        topK: 3,
+        returnMetadata: true
+      });
+
+      // Get full vehicle details from D1 database
+      const vehicleIds = searchResults.matches
+        ?.filter((match) => match.score && match.score > 0.7)
+        .map((match) => match.id) || [];
+
+      let relevantVehicles: Vehicle[] = [];
+      
+      if (vehicleIds.length > 0) {
+        const placeholders = vehicleIds.map(() => '?').join(',');
+        const { results } = await c.env.DB.prepare(
+          `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay 
+           FROM cars 
+           WHERE id IN (${placeholders})`
+        ).bind(...vehicleIds).all<Vehicle>();
+        
+        if (results) {
+          relevantVehicles = results;
+        }
+      }
+
+      // Build context from relevant vehicles
+      let contextMessage = "";
+      if (relevantVehicles.length > 0) {
+        contextMessage = `AVAILABLE VEHICLES IN DATABASE (YOU MUST ONLY RECOMMEND FROM THIS LIST):\n\n`;
+        relevantVehicles.forEach((vehicle, index) => {
+          contextMessage += `${index + 1}. ${vehicle.brand} ${vehicle.model} (${vehicle.year})\n`;
+          contextMessage += `   - Price: Rs. ${vehicle.pricePerDay}/day\n`;
+          contextMessage += `   - Type: ${vehicle.fuelType}, ${vehicle.transmission}\n`;
+          contextMessage += `   - Seats: ${vehicle.seats}\n`;
+          contextMessage += `   - Description: ${vehicle.description || 'No description available'}\n\n`;
+        });
+        contextMessage += `\nREMINDER: These are the ONLY ${relevantVehicles.length} vehicles available. Do NOT suggest any other vehicles.`;
+      } else {
+        contextMessage = `NO MATCHING VEHICLES FOUND IN DATABASE.\nYou MUST tell the user we don't have vehicles matching their criteria and ask them to adjust their requirements.`;
+      }
+      
+      const systemPrompt = `You are a helpful vehicle rental assistant for a car rental company. Your role is to recommend vehicles ONLY from the provided database context.
+
+CRITICAL RULES:
+- You MUST ONLY recommend vehicles that are explicitly listed in the context below
+- NEVER make up vehicle models, prices, or specifications
+- NEVER suggest vehicles not in the provided list
+- If no suitable vehicles match the user's needs, politely explain that we don't have matching vehicles in our current inventory
+- NEVER invent any Vehicles, Cars, or any other models not in the database
+- ALL prices and details MUST come from the context data
+
+Guidelines:
+- Use ONLY the provided vehicle context to make specific recommendations
+- Ask clarifying questions if the user's needs are unclear (budget, number of passengers, trip type, etc.)
+- Be friendly, concise, and helpful
+- If no suitable vehicles are found in the context, say: "I don't have any vehicles matching those criteria in our current inventory. Would you like to adjust your requirements?"
+- Always mention the exact price per day from the context
+- Only highlight features that are actually listed in the vehicle's data`;
+
       interface Message {
         role: "system" | "user" | "assistant";
         content: string;
@@ -163,17 +188,14 @@ app.post(
         { role: "system", content: systemPrompt },
       ];
       
-      // Add context if we have relevant vehicles
       if (contextMessage) {
         messages.push({ role: "system", content: contextMessage });
       }
-      
-      // Add conversation history
+
       conversationHistory.forEach((msg) => {
         messages.push({ role: msg.role, content: msg.content });
       });
-      
-      // Add current user message
+
       messages.push({ role: "user", content: message });
       
       // Generate response using Workers AI
@@ -183,15 +205,15 @@ app.post(
       
       return c.json({
         response: aiResponse.response,
-        relevantVehicles: relevantVehicles?.map((v) => ({
-          id: v?.id,
-          brand: v?.brand,
-          model: v?.model,
-          year: v?.year,
-          pricePerDay: v?.pricePerDay,
-          seats: v?.seats,
-          transmission: v?.transmission,
-          fuelType: v?.fuelType,
+        relevantVehicles: relevantVehicles.map((v) => ({
+          id: v.id,
+          brand: v.brand,
+          model: v.model,
+          year: v.year,
+          pricePerDay: v.pricePerDay,
+          seats: v.seats,
+          transmission: v.transmission,
+          fuelType: v.fuelType,
         })),
         metadata: {
           matchCount: searchResults.matches?.length || 0,
@@ -207,9 +229,75 @@ app.post(
   }
 );
 
-// Get all vehicle data (for reference)
-app.get("/vehicles", async (c) => {
-  return c.json({ vehicles: VEHICLE_DATA });
-});
+// Workflow for durable, async vehicle embedding generation
+export class VehicleEmbeddingWorkflow extends WorkflowEntrypoint<
+  CloudflareBindings,
+  VehicleEmbeddingParams
+> {
+  async run(event: WorkflowEvent<VehicleEmbeddingParams>, step: WorkflowStep) {
+    const { vehicleIds } = event.payload;
+
+    // Step 1: Fetch vehicles from database
+    const vehicles = await step.do("fetch-vehicles", async () => {
+      let query = `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay FROM cars`;
+      let params: number[] = [];
+
+      if (vehicleIds && vehicleIds.length > 0) {
+        const placeholders = vehicleIds.map(() => '?').join(',');
+        query += ` WHERE id IN (${placeholders})`;
+        params = vehicleIds;
+      }
+
+      const { results } = await this.env.DB.prepare(query).bind(...params).all<Vehicle>();
+      
+      if (!results || results.length === 0) {
+        throw new Error("No vehicles found in database");
+      }
+
+      return results;
+    });
+
+    // Step 2: Generate embeddings for each vehicle
+    const embeddings = await step.do("generate-embeddings", async () => {
+      const embeddingPromises = vehicles.map(async (vehicle) => {
+        const vehicleText = `${vehicle.brand} ${vehicle.model} ${vehicle.year}: ${vehicle.description || 'No description'}. ${vehicle.fuelType} ${vehicle.transmission} with ${vehicle.seats} seats at $${vehicle.pricePerDay}/day`;
+        
+        const result: any = await this.env.AI.run("@cf/baai/bge-base-en-v1.5", {
+          text: vehicleText,
+        });
+        
+        if (result.data && result.data[0]) {
+          return {
+            id: vehicle.id.toString(),
+            values: result.data[0],
+            metadata: {
+              brand: vehicle.brand,
+              model: vehicle.model,
+              year: vehicle.year,
+              pricePerDay: vehicle.pricePerDay
+            }
+          };
+        }
+        
+        throw new Error(`Failed to generate embedding for vehicle ${vehicle.id}`);
+      });
+
+      return await Promise.all(embeddingPromises);
+    });
+
+    // Step 3: Upsert vectors to Vectorize
+    const result = await step.do("upsert-vectors", async () => {
+      await this.env.VECTORIZE.upsert(embeddings);
+      
+      return {
+        success: true,
+        count: embeddings.length,
+        vehicleIds: embeddings.map(e => e.id)
+      };
+    });
+
+    return result;
+  }
+}
 
 export default app;
