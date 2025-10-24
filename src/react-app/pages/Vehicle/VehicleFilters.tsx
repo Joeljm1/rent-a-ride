@@ -191,6 +191,7 @@ export function VehicleFilters({ filters, setFilters }: VehicleFiltersProps) {
           <input
             type="text"
             value={filters.search}
+            // may be search in seperate state for debouncing??
             onChange={(e) => handleFilterChange("search", e.target.value)}
             placeholder="Model, brand..."
             className="w-full px-3 py-2 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent placeholder:text-muted-foreground"

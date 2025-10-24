@@ -60,10 +60,10 @@ app.post(
         status: "View status at /initialize/status/" + instance.id,
       });
     } catch (error) {
+      console.log("Error starting workflow:", error);
       return c.json(
         {
-          error: "Failed to start workflow",
-          details: error instanceof Error ? error.message : "Unknown error",
+          error: "Internal Server Error",
         },
         500,
       );
@@ -81,10 +81,11 @@ app.get("/initialize/status/:id", async (c) => {
     }
 
     const instance = await c.env.VEHICLE_EMBEDDING_WORKFLOW.get(workflowId);
+    const s = await instance.status();
 
     return c.json({
       id: instance.id,
-      status: instance.status,
+      status: s,
       // Add more status details as needed
     });
   } catch (error) {

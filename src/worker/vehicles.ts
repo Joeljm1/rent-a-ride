@@ -128,7 +128,7 @@ const carApp = new Hono<{
             gps: gps,
             createdAt: new Date(), // Explicitly set createdAt
           })
-          .returning({ id: cars.id});
+          .returning({ id: cars.id });
         const carId = carIds[0]; // cause only 1 inserted
         const r2Obj = await Promise.all(
           pics.map((pic) =>
@@ -144,6 +144,7 @@ const carApp = new Hono<{
             return {
               carId: carId.id,
               url: obj?.key,
+              // dont rememeber why is did this instead of using Cover from zValidator need to check later
               isCover: `${i}` === (body["Cover"] as string),
             };
           })
