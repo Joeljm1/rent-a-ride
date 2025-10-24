@@ -80,7 +80,9 @@
 	],
 	"ai": {
 		"binding": "AI",
-		"remote": true
+		"remote": true,
+		// probably should be below one
+		// "experimental_remote": true
 	},
 	"vectorize": [
 		{
@@ -95,4 +97,13 @@
 			"class_name": "VehicleEmbeddingWorkflow"
 		}
 	]
+}
+	"durable_objects": {
+		"bindings": [
+			{
+				"class_name": "GPS",
+				"name": "GPS"
+			}
+		]
+	}
 }

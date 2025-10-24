@@ -83,7 +83,7 @@ export const router = createBrowserRouter([
           if (minSeats) queryParams["query"]["minSeats"] = minSeats;
           if (sortBy) queryParams["query"]["sortBy"] = sortBy;
           if (search) queryParams["query"]["search"] = search;
-          
+
           const re = await client.api.cars.vehicleList.$get({
             query: { ...queryParams["query"] },
           });

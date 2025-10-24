@@ -58,7 +58,6 @@ export default function VehiclesPage() {
           Choose from our wide selection of vehicles
         </p>
       </div>
-
       <VehicleFilters filters={filters} setFilters={handleFiltersChange} />
 
       <div className="mb-4 flex items-center justify-between">

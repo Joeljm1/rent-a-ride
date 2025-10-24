@@ -72,7 +72,10 @@ export default function FileUploader() {
       newErrors.description = "Description is required";
     if (!formData.pricePerDay.trim()) {
       newErrors.pricePerDay = "Price per day is required";
-    } else if (isNaN(parseInt(formData.pricePerDay.trim())) || parseInt(formData.pricePerDay.trim()) <= 0) {
+    } else if (
+      isNaN(parseInt(formData.pricePerDay.trim())) ||
+      parseInt(formData.pricePerDay.trim()) <= 0
+    ) {
       newErrors.pricePerDay = "Price must be a positive number";
     }
 
@@ -103,7 +106,6 @@ export default function FileUploader() {
           submitData.append("Cover", `${index}`);
         }
       });
-
       const response = await fetch(`/api/cars/addCar`, {
         method: "POST",
         credentials: "include",
@@ -231,10 +233,15 @@ export default function FileUploader() {
             type="checkbox"
             id="gps"
             checked={formData.gps}
-            onChange={(e) => setFormData((prev) => ({ ...prev, gps: e.target.checked }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, gps: e.target.checked }))
+            }
             className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
           />
-          <label htmlFor="gps" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+          <label
+            htmlFor="gps"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+          >
             GPS Navigation System Available
           </label>
         </div>

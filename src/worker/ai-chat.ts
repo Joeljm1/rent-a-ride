@@ -84,24 +84,28 @@ app.post(
     "json",
     z.object({
       message: z.string().min(1, "Message is required"),
-      conversationHistory: z.array(
-        z.object({
-          role: z.enum(["user", "assistant"]),
-          content: z.string(),
-        })
-      ).optional(),
-    })
+      conversationHistory: z
+        .array(
+          z.object({
+            role: z.enum(["user", "assistant"]),
+            content: z.string(),
+          }),
+        )
+        .optional(),
+    }),
   ),
   async (c) => {
     try {
       const { message, conversationHistory = [] } = c.req.valid("json");
-      
+
       if (!c.env.AI) {
-        return c.json({ error: "AI service not configured" }, 500);
+        console.log("AI service not configured");
+        return c.json({ error: "Internal Server Error" }, 500);
       }
-      
+
       if (!c.env.VECTORIZE) {
-        return c.json({ error: "Vector database not configured" }, 500);
+        console.log("Vector database not configured");
+        return c.json({ error: "Internal Server Error" }, 500);
       }
       
       if (!c.env.DB) {
@@ -114,7 +118,8 @@ app.post(
       });
       
       if (!queryEmbeddings.data || !queryEmbeddings.data[0]) {
-        return c.json({ error: "Failed to generate query embedding" }, 500);
+        console.log("Failed to get query embeddings");
+        return c.json({ error: "Internal Server Error" }, 500);
       }
       
       const queryVector = queryEmbeddings.data[0];
@@ -197,12 +202,12 @@ Guidelines:
       });
 
       messages.push({ role: "user", content: message });
-      
+
       // Generate response using Workers AI
       const aiResponse = await c.env.AI.run("@cf/meta/llama-3-8b-instruct", {
         messages,
       });
-      
+
       return c.json({
         response: aiResponse.response,
         relevantVehicles: relevantVehicles.map((v) => ({
@@ -222,11 +227,14 @@ Guidelines:
       });
     } catch (error) {
       return c.json(
-        { error: "Failed to process chat request", details: error instanceof Error ? error.message : "Unknown error" },
-        500
+        {
+          error: "Failed to process chat request",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
+        500,
       );
     }
-  }
+  },
 );
 
 // Workflow for durable, async vehicle embedding generation

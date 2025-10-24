@@ -38,7 +38,13 @@ export const carSort = [
 ] as const;
 
 export const carTransmission = ["all", "manual", "automatic"] as const;
-export const carType = ["all", "free","unavailable", "renting","approved"] as const ;
+export const carType = [
+  "all",
+  "free",
+  "unavailable",
+  "renting",
+  "approved",
+] as const;
 
 const carApp = new Hono<{
   Bindings: CloudflareBindings;
@@ -62,11 +68,7 @@ const carApp = new Hono<{
         Cover: z.coerce.number().int(),
         mileage: z.coerce.number(),
         pricePerDay: z.coerce.number().int(),
-        gps: z
-          .union([z.boolean(), z.string()])
-          .transform((val) => val === true || val === "true" || val === "on")
-          .optional()
-          .default(false),
+        gps: z.coerce.boolean().optional().default(false),
       }),
     ),
     async (c) => {

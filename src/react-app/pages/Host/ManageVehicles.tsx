@@ -7,7 +7,9 @@ export default function ManageVehicles(): React.ReactElement {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<"all" | "available" | "rented" | "unavailable">("all");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "available" | "rented" | "unavailable"
+  >("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
@@ -34,8 +36,14 @@ export default function ManageVehicles(): React.ReactElement {
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Failed to fetch vehicles" }));
-        throw new Error("message" in errorData ? errorData.message : "Failed to fetch vehicles");
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Failed to fetch vehicles" }));
+        throw new Error(
+          "message" in errorData
+            ? errorData.message
+            : "Failed to fetch vehicles",
+        );
       }
 
       const data = await response.json();
@@ -84,10 +92,8 @@ export default function ManageVehicles(): React.ReactElement {
       // Update local state
       setVehicles((prev) =>
         prev.map((v) =>
-          v.id === editingVehicle.id
-            ? { ...v, ...editFormData }
-            : v
-        )
+          v.id === editingVehicle.id ? { ...v, ...editFormData } : v,
+        ),
       );
 
       handleCloseEdit();
@@ -130,7 +136,7 @@ export default function ManageVehicles(): React.ReactElement {
         (v) =>
           v.brand.toLowerCase().includes(query) ||
           v.model.toLowerCase().includes(query) ||
-          `${v.brand} ${v.model}`.toLowerCase().includes(query)
+          `${v.brand} ${v.model}`.toLowerCase().includes(query),
       );
     }
 
@@ -139,10 +145,12 @@ export default function ManageVehicles(): React.ReactElement {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      available: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      available:
+        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       renting: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
       unavailable: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-      requesting: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+      requesting:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
     };
     return badges[status as keyof typeof badges] || badges.available;
   };
@@ -173,7 +181,9 @@ export default function ManageVehicles(): React.ReactElement {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading your vehicles...</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading your vehicles...
+            </p>
           </div>
         </div>
       </div>
@@ -184,14 +194,24 @@ export default function ManageVehicles(): React.ReactElement {
     const isAuthError = error.includes("log in");
     return (
       <div className="max-w-7xl mx-auto px-6 lg:px-8 pl-8 lg:pl-16 py-8">
-        <div className={`${isAuthError ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'} border rounded-lg p-6`}>
+        <div
+          className={`${isAuthError ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"} border rounded-lg p-6`}
+        >
           <div className="flex items-center">
-            <span className="text-2xl mr-3">{isAuthError ? '🔒' : '⚠️'}</span>
+            <span className="text-2xl mr-3">{isAuthError ? "🔒" : "⚠️"}</span>
             <div>
-              <h3 className={`${isAuthError ? 'text-yellow-800 dark:text-yellow-200' : 'text-red-800 dark:text-red-200'} font-semibold`}>
-                {isAuthError ? 'Authentication Required' : 'Error Loading Vehicles'}
+              <h3
+                className={`${isAuthError ? "text-yellow-800 dark:text-yellow-200" : "text-red-800 dark:text-red-200"} font-semibold`}
+              >
+                {isAuthError
+                  ? "Authentication Required"
+                  : "Error Loading Vehicles"}
               </h3>
-              <p className={`${isAuthError ? 'text-yellow-600 dark:text-yellow-300' : 'text-red-600 dark:text-red-300'} text-sm mt-1`}>{error}</p>
+              <p
+                className={`${isAuthError ? "text-yellow-600 dark:text-yellow-300" : "text-red-600 dark:text-red-300"} text-sm mt-1`}
+              >
+                {error}
+              </p>
               <div className="flex gap-2 mt-3">
                 {isAuthError ? (
                   <Link
@@ -241,8 +261,12 @@ export default function ManageVehicles(): React.ReactElement {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Vehicles</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">{stats.total}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Total Vehicles
+              </p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">
+                {stats.total}
+              </p>
             </div>
             <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center text-2xl">
               🚗
@@ -253,8 +277,12 @@ export default function ManageVehicles(): React.ReactElement {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Available</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">{stats.available}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Available
+              </p>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
+                {stats.available}
+              </p>
             </div>
             <div className="w-14 h-14 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center text-2xl">
               ✓
@@ -265,8 +293,12 @@ export default function ManageVehicles(): React.ReactElement {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Currently Rented</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">{stats.rented}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Currently Rented
+              </p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">
+                {stats.rented}
+              </p>
             </div>
             <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-2xl">
               🔑
@@ -277,7 +309,9 @@ export default function ManageVehicles(): React.ReactElement {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-red-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Unavailable</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Unavailable
+              </p>
               <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-2">
                 {stats.unavailable}
               </p>
@@ -302,22 +336,32 @@ export default function ManageVehicles(): React.ReactElement {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2.5 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                🔍
+              </span>
             </div>
           </div>
 
           {/* Status Filter */}
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Filter:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+              Filter:
+            </span>
             <div className="flex gap-2">
               {[
                 { value: "all", label: "All", count: stats.total },
-                { value: "available", label: "Available", count: stats.available },
+                {
+                  value: "available",
+                  label: "Available",
+                  count: stats.available,
+                },
                 { value: "rented", label: "Rented", count: stats.rented },
               ].map((filter) => (
                 <button
                   key={filter.value}
-                  onClick={() => setFilterStatus(filter.value as typeof filterStatus)}
+                  onClick={() =>
+                    setFilterStatus(filter.value as typeof filterStatus)
+                  }
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     filterStatus === filter.value
                       ? "bg-indigo-600 text-white"
@@ -383,7 +427,8 @@ export default function ManageVehicles(): React.ReactElement {
         /* Grid View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredVehicles.map((vehicle) => {
-            const coverImage = vehicle.pics.find((p) => p.isCover) || vehicle.pics[0];
+            const coverImage =
+              vehicle.pics.find((p) => p.isCover) || vehicle.pics[0];
             return (
               <div
                 key={vehicle.id}
@@ -398,13 +443,16 @@ export default function ManageVehicles(): React.ReactElement {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-6xl">🚗</div>
+                    <div className="w-full h-full flex items-center justify-center text-6xl">
+                      🚗
+                    </div>
                   )}
                   <div className="absolute top-3 right-3">
                     <span
                       className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusBadge(vehicle.status)}`}
                     >
-                      {getStatusIcon(vehicle.status)} {getStatusText(vehicle.status)}
+                      {getStatusIcon(vehicle.status)}{" "}
+                      {getStatusText(vehicle.status)}
                     </span>
                   </div>
                 </div>
@@ -412,9 +460,13 @@ export default function ManageVehicles(): React.ReactElement {
                 {/* Vehicle Info */}
                 <div className="p-5">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-                    {vehicle.brand.charAt(0).toUpperCase() + vehicle.brand.slice(1)} {vehicle.model}
+                    {vehicle.brand.charAt(0).toUpperCase() +
+                      vehicle.brand.slice(1)}{" "}
+                    {vehicle.model}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{vehicle.year}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    {vehicle.year}
+                  </p>
 
                   {/* Specs */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -444,7 +496,7 @@ export default function ManageVehicles(): React.ReactElement {
                     >
                       View Details
                     </Link>
-                    <button 
+                    <button
                       onClick={() => handleEditClick(vehicle)}
                       className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
                     >
@@ -488,7 +540,8 @@ export default function ManageVehicles(): React.ReactElement {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredVehicles.map((vehicle) => {
-                  const coverImage = vehicle.pics.find((p) => p.isCover) || vehicle.pics[0];
+                  const coverImage =
+                    vehicle.pics.find((p) => p.isCover) || vehicle.pics[0];
                   return (
                     <tr
                       key={vehicle.id}
@@ -511,7 +564,8 @@ export default function ManageVehicles(): React.ReactElement {
                           </div>
                           <div>
                             <p className="font-semibold text-gray-900 dark:text-gray-100">
-                              {vehicle.brand.charAt(0).toUpperCase() + vehicle.brand.slice(1)}{" "}
+                              {vehicle.brand.charAt(0).toUpperCase() +
+                                vehicle.brand.slice(1)}{" "}
                               {vehicle.model}
                             </p>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -520,7 +574,9 @@ export default function ManageVehicles(): React.ReactElement {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-900 dark:text-gray-100">{vehicle.year}</td>
+                      <td className="px-6 py-4 text-gray-900 dark:text-gray-100">
+                        {vehicle.year}
+                      </td>
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-400 capitalize">
                         {vehicle.fuelType}
                       </td>
@@ -534,7 +590,8 @@ export default function ManageVehicles(): React.ReactElement {
                         <span
                           className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusBadge(vehicle.status)}`}
                         >
-                          {getStatusIcon(vehicle.status)} {getStatusText(vehicle.status)}
+                          {getStatusIcon(vehicle.status)}{" "}
+                          {getStatusText(vehicle.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -545,7 +602,7 @@ export default function ManageVehicles(): React.ReactElement {
                           >
                             View
                           </Link>
-                          <button 
+                          <button
                             onClick={() => handleEditClick(vehicle)}
                             className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
                           >
@@ -575,8 +632,18 @@ export default function ManageVehicles(): React.ReactElement {
                   onClick={handleCloseEdit}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -590,7 +657,12 @@ export default function ManageVehicles(): React.ReactElement {
                   <input
                     type="text"
                     value={editFormData.brand}
-                    onChange={(e) => setEditFormData({ ...editFormData, brand: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        brand: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
@@ -603,7 +675,12 @@ export default function ManageVehicles(): React.ReactElement {
                   <input
                     type="text"
                     value={editFormData.model}
-                    onChange={(e) => setEditFormData({ ...editFormData, model: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        model: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
@@ -617,7 +694,12 @@ export default function ManageVehicles(): React.ReactElement {
                     <input
                       type="number"
                       value={editFormData.year}
-                      onChange={(e) => setEditFormData({ ...editFormData, year: parseInt(e.target.value) })}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          year: parseInt(e.target.value),
+                        })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
@@ -628,7 +710,12 @@ export default function ManageVehicles(): React.ReactElement {
                     <input
                       type="number"
                       value={editFormData.distanceUsed}
-                      onChange={(e) => setEditFormData({ ...editFormData, distanceUsed: parseInt(e.target.value) })}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          distanceUsed: parseInt(e.target.value),
+                        })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
@@ -642,7 +729,12 @@ export default function ManageVehicles(): React.ReactElement {
                     </label>
                     <select
                       value={editFormData.fuelType}
-                      onChange={(e) => setEditFormData({ ...editFormData, fuelType: e.target.value })}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          fuelType: e.target.value,
+                        })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                     >
                       <option value="petrol">Petrol</option>
@@ -657,7 +749,12 @@ export default function ManageVehicles(): React.ReactElement {
                     </label>
                     <select
                       value={editFormData.transmission}
-                      onChange={(e) => setEditFormData({ ...editFormData, transmission: e.target.value })}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          transmission: e.target.value,
+                        })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                     >
                       <option value="manual">Manual</option>
@@ -675,7 +772,12 @@ export default function ManageVehicles(): React.ReactElement {
                     <input
                       type="number"
                       value={editFormData.seats}
-                      onChange={(e) => setEditFormData({ ...editFormData, seats: parseInt(e.target.value) })}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          seats: parseInt(e.target.value),
+                        })
+                      }
                       min="1"
                       max="50"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
@@ -687,7 +789,12 @@ export default function ManageVehicles(): React.ReactElement {
                     </label>
                     <select
                       value={editFormData.status}
-                      onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as EditFormData["status"] })}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          status: e.target.value as EditFormData["status"],
+                        })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                     >
                       <option value="available">Available</option>
@@ -722,3 +829,4 @@ export default function ManageVehicles(): React.ReactElement {
     </div>
   );
 }
+

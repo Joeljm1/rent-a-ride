@@ -8,14 +8,14 @@ export default function Header() {
   const session = useContext(AuthContext);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem('theme');
-      if (stored === 'dark') return true;
-      if (stored === 'light') return false;
+      const stored = localStorage.getItem("theme");
+      if (stored === "dark") return true;
+      if (stored === "light") return false;
     } catch {
       // ignore
     }
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (typeof window !== "undefined" && window.matchMedia) {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
     return false;
   });
@@ -28,13 +28,13 @@ export default function Header() {
       htmlElement.classList.remove("dark");
     }
     try {
-      localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+      localStorage.setItem("theme", isDarkMode ? "dark" : "light");
     } catch {
       // ignore write errors
     }
   }, [isDarkMode]);
 
-  const activeStyle: React.CSSProperties= {
+  const activeStyle: React.CSSProperties = {
     fontWeight: "bold",
     textDecoration: "underline",
     color: "#6f00ffff",
@@ -69,6 +69,7 @@ export default function Header() {
             to="/vehicles"
             style={({ isActive }) => (isActive ? activeStyle : undefined)}
             className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition delay-150 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110"
+            prefetch="intent"
           >
             Cars
           </NavLink>
@@ -90,9 +91,7 @@ export default function Header() {
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">
                 Welcome,{" "}
-                <span className="font-semibold">
-                  {session.data.user.name}
-                </span>
+                <span className="font-semibold">{session.data.user.name}</span>
               </span>
               <button
                 onClick={() => authClient.signOut()}
@@ -118,8 +117,7 @@ export default function Header() {
                 Register
               </NavLink>
             </>
-          )
-        }
+          )}
         </nav>
         {/* Dark Mode Toggle */}
         <button
@@ -132,4 +130,4 @@ export default function Header() {
       </div>
     </header>
   );
-} 
+}

@@ -14,10 +14,9 @@ export default function HostLayout(): React.ReactElement {
     { to: "earnings", label: "Earnings", icon: "💰" },
     { to: "profile", label: "Profile", icon: "👤" },
   ];
-
   return (
     <div className="flex bg-gray-100 dark:bg-gray-900">
-        {/* Sidebar */}
+      {/* Sidebar */}
       <div className="hidden md:flex md:w-64 md:flex-col">
         <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 shadow-lg">
           {/* Host Header */}
