@@ -22,26 +22,61 @@ const GPSRouter = new Hono<{
     }),
   ),
   async (c) => {
-    const db = c.get("db");
-    const { gpsId, gpsPass, lat, lon } = c.req.valid("json");
-    const resp = await db
-      .select({ pass: requests.gpsPass })
-      .from(requests)
-      .where(eq(requests.gpsId, gpsId));
-    if (resp.length === 0) {
+    try {
+      const db = c.get("db");
+      const { gpsId, gpsPass, lat, lon } = c.req.valid("json");
+      const resp = await db
+        .select({ pass: requests.gpsPass })
+        .from(requests)
+        .where(eq(requests.gpsId, gpsId));
+      if (resp.length === 0) {
+        return c.json(
+          {
+            error: "Icorrect Id or Password",
+          },
+          401,
+        );
+      }
+      const isValid = await verify({
+        hash: resp[0].pass as string,
+        password: gpsPass,
+      });
+      if (!isValid) {
+        return c.json(
+          {
+            error: "Icorrect Id or Password",
+          },
+          401,
+        );
+      }
+
+      const id = c.env.GPS.idFromName(gpsId);
+      const stub = c.env.GPS.get(id);
+      const doResp = await stub.updateCord(lat, lon);
+      if (doResp === "OK") {
+        return c.json(
+          {
+            message: "Successful",
+          },
+          200,
+        );
+      } else {
+        console.log(doResp);
+        return c.json(
+          {
+            error: "some error occured",
+          },
+          500,
+        );
+      }
+    } catch (err) {
+      console.log(err);
       return c.json(
         {
-          error: "GPS ID not found ",
+          error: "some error occured",
         },
-        404,
+        500,
       );
-    }
-    const isValid = await verify({
-      hash: resp[0].pass as string,
-      password: gpsPass,
-    });
-    if (!isValid) {
-      return;
     }
   },
 );
