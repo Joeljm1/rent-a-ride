@@ -97,20 +97,20 @@
 			"class_name": "VehicleEmbeddingWorkflow",
 		}
 	],
-	// "durable_objects": {
-	// 	"bindings": [
-	// 		{
-	// 			"class_name": "GPS",
-	// 			"name": "GPS"
-	// 		}
-	// 	]
-	// },
-	// "migrations": [
-	// 	{
-	// 		"tag": "v1",
-	// 		"new_sqlite_classes": [
-	// 			"GPS_DB"
-	// 		]
-	// 	}
-	// ]
+	"durable_objects": {
+		"bindings": [
+			{
+				"class_name": "GPS",
+				"name": "GPS"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"GPS_DB"
+			]
+		}
+	]
 }
