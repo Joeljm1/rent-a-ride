@@ -438,7 +438,7 @@ const carApp = new Hono<{
     }
   })
   .get(
-    "/contact:id",
+    "/contact/:id",
     zValidator("param", z.object({ id: z.coerce.number().int().min(1) })),
     async (c) => {
       try {
@@ -518,8 +518,10 @@ const carApp = new Hono<{
             sort = desc(cars.year);
             break;
           case "lowMileage":
-            sort = asc(cars.year);
+            sort = asc(cars.mileage);
             break;
+          case "highMileage":
+            sort = desc(cars.mileage);
         }
         if (brand) {
           filters.push(eq(cars.brand, brand));
@@ -629,63 +631,64 @@ const carApp = new Hono<{
     }
   })
 
-  .post(
-    "/rent",
-    zValidator(
-      "json",
-      z.object({
-        id: z.coerce.number().int(),
-        from: z.coerce.date(),
-        to: z.coerce.date(),
-        msg: z.string(),
-      }),
-    ),
-    async (c) => {
-      try {
-        const user = c.get("user");
-        const db = c.get("db");
-        if (user === null) {
-          return c.json({ message: "UnAuthorized" }, 401);
-        }
-        const { id, from, to, msg } = c.req.valid("json");
-        const car = await db
-          .select()
-          .from(cars)
-          .where(and(eq(cars.id, id), eq(cars.status, "available")))
-          .limit(1);
-        if (car.length == 0) {
-          return c.json({ message: "Car Not Found or Unavailable" }, 404);
-        }
-        if (car[0].userId === user.id) {
-          return c.json({ message: "Cannot rent your own car" }, 400);
-        }
-        try {
-          // not sure if id needed
-          // const reqID =
-          await db
-            .insert(requests)
-            .values({
-              carId: id,
-              requestedBy: user.id,
-              rentedFrom: from,
-              rentedTo: to,
-              reqMessage: msg,
-            })
-            .returning({ reqID: requests.id });
-        } catch (e) {
-          console.error(`Error inserting to db :${e}`);
-          return c.json(
-            { message: "Failed to create request, try again" },
-            500,
-          );
-        }
-        return c.json({ message: "Rental Requested" }, 200);
-      } catch (err) {
-        console.error(err);
-        return c.json({ message: "Internal Server Error" }, 500);
-      }
-    },
-  )
+  // dont know how to of same thing came
+  // .post(
+  //   "/rent",
+  //   zValidator(
+  //     "json",
+  //     z.object({
+  //       id: z.coerce.number().int(),
+  //       from: z.coerce.date(),
+  //       to: z.coerce.date(),
+  //       msg: z.string(),
+  //     }),
+  //   ),
+  //   async (c) => {
+  //     try {
+  //       const user = c.get("user");
+  //       const db = c.get("db");
+  //       if (user === null) {
+  //         return c.json({ message: "UnAuthorized" }, 401);
+  //       }
+  //       const { id, from, to, msg } = c.req.valid("json");
+  //       const car = await db
+  //         .select()
+  //         .from(cars)
+  //         .where(and(eq(cars.id, id), eq(cars.status, "available")))
+  //         .limit(1);
+  //       if (car.length == 0) {
+  //         return c.json({ message: "Car Not Found or Unavailable" }, 404);
+  //       }
+  //       if (car[0].userId === user.id) {
+  //         return c.json({ message: "Cannot rent your own car" }, 400);
+  //       }
+  //       try {
+  //         // not sure if id needed
+  //         // const reqID =
+  //         await db
+  //           .insert(requests)
+  //           .values({
+  //             carId: id,
+  //             requestedBy: user.id,
+  //             rentedFrom: from,
+  //             rentedTo: to,
+  //             reqMessage: msg,
+  //           })
+  //           .returning({ reqID: requests.id });
+  //       } catch (e) {
+  //         console.error(`Error inserting to db :${e}`);
+  //         return c.json(
+  //           { message: "Failed to create request, try again" },
+  //           500,
+  //         );
+  //       }
+  //       return c.json({ message: "Rental Requested" }, 200);
+  //     } catch (err) {
+  //       console.error(err);
+  //       return c.json({ message: "Internal Server Error" }, 500);
+  //     }
+  //   },
+  // )
   .patch(
     "/update/:id",
     zValidator("param", z.object({ id: z.coerce.number().int().min(1) })),

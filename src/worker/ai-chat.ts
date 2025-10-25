@@ -76,13 +76,13 @@ app.post(
 app.post("/initialize-direct", async (c) => {
   try {
     const { results: vehicles } = await c.env.DB.prepare(
-      `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay FROM cars`
+      `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay FROM cars`,
     ).all<Vehicle>();
 
     if (!vehicles || vehicles.length === 0) {
       return c.json({ error: "No vehicles found in database" }, 404);
     }
-
+    console.log(`Fetched ${vehicles.length} vehicles from database.`);
     // Generate embeddings
     const embeddingPromises = vehicles.map(async (vehicle) => {
       const vehicleText = `${vehicle.brand} ${vehicle.model} ${vehicle.year}: ${vehicle.description || "No description"}. ${vehicle.fuelType} ${vehicle.transmission} with ${vehicle.seats} seats at Rs.${vehicle.pricePerDay}/day`;
@@ -90,7 +90,7 @@ app.post("/initialize-direct", async (c) => {
       const result: any = await c.env.AI.run("@cf/baai/bge-base-en-v1.5", {
         text: vehicleText,
       });
-
+      console.log("Embedding result for vehicle", vehicle.id, result);
       if (result.data && result.data[0]) {
         return {
           id: vehicle.id.toString(),
@@ -116,7 +116,11 @@ app.post("/initialize-direct", async (c) => {
       success: true,
       message: "Initialization complete",
       count: embeddings.length,
-      vehicles: vehicles.map((v) => ({ id: v.id, brand: v.brand, model: v.model })),
+      vehicles: vehicles.map((v) => ({
+        id: v.id,
+        brand: v.brand,
+        model: v.model,
+      })),
     });
   } catch (error) {
     console.error("Direct initialization failed:", error);
@@ -213,7 +217,7 @@ app.post(
         topK: 3,
         returnMetadata: true,
       });
-
+      console.log("Vector search results:", searchResults);
       // Get full vehicle details from D1 database
       const vehicleIds =
         searchResults.matches
@@ -239,51 +243,63 @@ app.post(
         }
       }
       console.log("Relevant vehicles from vector search:", relevantVehicles);
-      
+
       // Fallback: If vector search didn't find anything, try keyword search
       if (relevantVehicles.length === 0) {
         const lowerMessage = message.toLowerCase();
         let whereClause = "";
-        
+
         // Priority 1: Check for fuel types (most specific)
-        if (lowerMessage.includes('electric') || lowerMessage.match(/\bev\b/) || lowerMessage.includes('tesla')) {
+        if (
+          lowerMessage.includes("electric") ||
+          lowerMessage.match(/\bev\b/) ||
+          lowerMessage.includes("tesla")
+        ) {
           whereClause = "fuel_type LIKE '%electric%'";
-        } else if (lowerMessage.includes('diesel')) {
+        } else if (lowerMessage.includes("diesel")) {
           whereClause = "fuel_type LIKE '%diesel%'";
-        } else if (lowerMessage.includes('petrol') || lowerMessage.includes('gasoline')) {
+        } else if (
+          lowerMessage.includes("petrol") ||
+          lowerMessage.includes("gasoline")
+        ) {
           whereClause = "fuel_type LIKE '%petrol%'";
         }
         // Priority 2: Check for brands
-        else if (lowerMessage.includes('bmw')) {
+        else if (lowerMessage.includes("bmw")) {
           whereClause = "brand LIKE '%bmw%'";
-        } else if (lowerMessage.includes('toyota')) {
+        } else if (lowerMessage.includes("toyota")) {
           whereClause = "brand LIKE '%toyota%'";
-        } else if (lowerMessage.includes('honda')) {
+        } else if (lowerMessage.includes("honda")) {
           whereClause = "brand LIKE '%honda%'";
-        } else if (lowerMessage.includes('ford')) {
+        } else if (lowerMessage.includes("ford")) {
           whereClause = "brand LIKE '%ford%'";
-        } else if (lowerMessage.includes('chevrolet')) {
+        } else if (lowerMessage.includes("chevrolet")) {
           whereClause = "brand LIKE '%chevrolet%'";
-        } else if (lowerMessage.includes('mazda')) {
+        } else if (lowerMessage.includes("mazda")) {
           whereClause = "brand LIKE '%mazda%'";
         }
         // Priority 3: Check for vehicle types
-        else if (lowerMessage.includes('suv')) {
-          whereClause = "(description LIKE '%SUV%' OR model LIKE '%SUV%' OR model LIKE '%cr-v%' OR model LIKE '%cx-%')";
-        } else if (lowerMessage.includes('sedan')) {
+        else if (lowerMessage.includes("suv")) {
+          whereClause =
+            "(description LIKE '%SUV%' OR model LIKE '%SUV%' OR model LIKE '%cr-v%' OR model LIKE '%cx-%')";
+        } else if (lowerMessage.includes("sedan")) {
           whereClause = "(description LIKE '%sedan%')";
-        } else if (lowerMessage.includes('truck') || lowerMessage.includes('pickup')) {
-          whereClause = "(description LIKE '%truck%' OR description LIKE '%pickup%' OR model LIKE '%f-150%')";
+        } else if (
+          lowerMessage.includes("truck") ||
+          lowerMessage.includes("pickup")
+        ) {
+          whereClause =
+            "(description LIKE '%truck%' OR description LIKE '%pickup%' OR model LIKE '%f-150%')";
         }
-        
+
         if (whereClause) {
           const { results } = await c.env.DB.prepare(
             `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay 
              FROM cars 
              WHERE ${whereClause}
-             LIMIT 10`
+             LIMIT 10`,
           ).all<Vehicle>();
-          
+
           if (results && results.length > 0) {
             relevantVehicles = results;
           }
@@ -318,6 +334,8 @@ app.post(
 🚫 ABSOLUTE RESTRICTIONS:
 - Your ENTIRE inventory is listed in the next message
 - You CANNOT recommend ANY vehicle not in that list
+- You CANNOT recommend ANY vehicle not related to the latest content with role as user even if present in the list 
+- You CANNOT recomend ANY vehichle not asked by user. (For example if user asks for Ford car only recomend ford car)
 - You MUST copy vehicle details EXACTLY (brand, model, year, price)
 - DO NOT invent models like "X3", "X5", "320i" - only use models from the list
 - DO NOT change prices - use EXACT prices from the list
@@ -349,7 +367,7 @@ When recommending, copy from the list EXACTLY.`;
       });
 
       messages.push({ role: "user", content: message });
-
+      console.log(messages);
       // Generate response using Workers AI
       const aiResponse = await c.env.AI.run("@cf/meta/llama-3-8b-instruct", {
         messages,
@@ -357,13 +375,15 @@ When recommending, copy from the list EXACTLY.`;
 
       // POST-PROCESS: Remove any hallucinated content by ensuring only our vehicles are mentioned
       let finalResponse = aiResponse.response || "";
-      
+
       // If we have relevant vehicles, append a structured list to prevent hallucinations
       if (relevantVehicles.length > 0) {
         finalResponse = `Based on your requirements, here are the available vehicles:\n\n`;
-        
+
         relevantVehicles.forEach((vehicle, index) => {
-          finalResponse += `${index + 1}. ${vehicle.brand.toUpperCase()} ${vehicle.model.toUpperCase()} (${vehicle.year})\n`;
+          finalResponse +=
+            `${index + 1}. ${vehicle.brand.toUpperCase()} ${vehicle.model.toUpperCase()} (${vehicle.year})` +
+            "";
           finalResponse += `   - Price: Rs. ${vehicle.pricePerDay}/day\n`;
           finalResponse += `   - Seats: ${vehicle.seats} passengers\n`;
           finalResponse += `   - Transmission: ${vehicle.transmission.charAt(0).toUpperCase() + vehicle.transmission.slice(1)}\n`;
@@ -373,7 +393,7 @@ When recommending, copy from the list EXACTLY.`;
           }
           finalResponse += `\n`;
         });
-        
+
         finalResponse += `These are all the available options in our current inventory. Would you like to know more about any of these vehicles?`;
       }
 
@@ -447,9 +467,12 @@ export class VehicleEmbeddingWorkflow extends WorkflowEntrypoint<
           const embeddingPromises = vehicles.map(async (vehicle) => {
             const vehicleText = `${vehicle.brand} ${vehicle.model} ${vehicle.year}: ${vehicle.description || "No description"}. ${vehicle.fuelType} ${vehicle.transmission} with ${vehicle.seats} seats at $${vehicle.pricePerDay}/day`;
 
-            const result: any = await this.env.AI.run("@cf/baai/bge-base-en-v1.5", {
-              text: vehicleText,
-            });
+            const result: any = await this.env.AI.run(
+              "@cf/baai/bge-base-en-v1.5",
+              {
+                text: vehicleText,
+              },
+            );
 
             if (result.data && result.data[0]) {
               return {

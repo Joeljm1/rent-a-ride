@@ -22,6 +22,7 @@ const carReq = new Hono<{
     zValidator(
       "json",
       z.object({
+        // carid should have names it   carID check if frontend has confict if name changed and rename
         id: z.coerce.number().int(),
         from: z.coerce.date(),
         to: z.coerce.date(),
@@ -180,7 +181,7 @@ const carReq = new Hono<{
         .select()
         .from(requests)
         .innerJoin(cars, eq(requests.carId, cars.id))
-        .innerJoin(carPics, eq(carPics.id, carPics.id))
+        .innerJoin(carPics, eq(cars.id, carPics.id))
         .where(
           and(
             eq(cars.userId, user.id),
@@ -251,7 +252,7 @@ const carReq = new Hono<{
               await tx
                 .update(requests)
                 .set({ status: "approved" })
-                .where(eq(cars.id, id));
+                .where(eq(requests.id, id));
               await tx
                 .update(cars)
                 .set({ status: "approved" })

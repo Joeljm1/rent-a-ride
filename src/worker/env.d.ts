@@ -7,6 +7,7 @@ export interface CloudflareBindings {
   AI: Ai;
   VECTORIZE: Vectorize;
   VEHICLE_EMBEDDING_WORKFLOW: Workflow;
+  GPS:DurableObjectNamespace<GPS>;
 }
 
 declare global {
