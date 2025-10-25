@@ -117,25 +117,25 @@ export function VehicleCard({ vehicle, onRent }: VehicleCardProps) {
 
       <CardContent className="p-4">
         <CardTitle className="text-lg mb-2 line-clamp-1">
-          {vehicle.brand} {vehicle.model}
+          {vehicle.brand.toUpperCase()} {vehicle.model.toUpperCase()}
         </CardTitle>
 
         <div className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1">
               <span>⛽</span>
-              {vehicle.fuelType}
+              {vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1)}
             </span>
             <span className="flex items-center gap-1">
               <span>⚙️</span>
-              {vehicle.transmission}
+              {vehicle.transmission.charAt(0).toUpperCase() + vehicle.transmission.slice(1)}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1">
               <span>👥</span>
-              {vehicle.seats} seats
+              {vehicle.seats} Seats
             </span>
             <span className="flex items-center gap-1">
               <span>📏</span>

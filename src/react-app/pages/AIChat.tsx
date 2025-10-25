@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router"
 import client from "../lib/client";
 
 interface Message {
@@ -121,10 +122,7 @@ export default function AIChat(): React.ReactElement {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-white">AI Vehicle Assistant</h1>
-                <p className="text-blue-100 flex items-center space-x-2 text-xs">
-                  <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  <span>Powered by Cloudflare Workers AI & Vectorize</span>
-                </p>
+                <p className="text-blue-100 flex items-center space-x-2 text-xs"></p>
               </div>
             </div>
           </div>
@@ -247,7 +245,7 @@ export default function AIChat(): React.ReactElement {
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <h3 className="font-bold text-gray-800 dark:text-gray-100">
-                              {vehicle.brand} {vehicle.model}
+                              {vehicle.brand.toUpperCase()} {vehicle.model.toUpperCase()}
                             </h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                               {vehicle.year}
@@ -255,7 +253,7 @@ export default function AIChat(): React.ReactElement {
                           </div>
                           <div className="text-right">
                             <p className="text-xl font-bold text-blue-600">
-                              ${vehicle.pricePerDay}
+                              Rs. {vehicle.pricePerDay}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
                               per day
@@ -265,19 +263,19 @@ export default function AIChat(): React.ReactElement {
                         <div className="grid grid-cols-2 gap-2 text-sm mb-3 text-gray-700 dark:text-gray-300">
                           <div className="flex items-center space-x-2">
                             <span>👥</span>
-                            <span>{vehicle.seats} seats</span>
+                            <span>{vehicle.seats} Seats</span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <span>⚙️</span>
-                            <span>{vehicle.transmission}</span>
+                            <span>{vehicle.transmission.charAt(0).toUpperCase() + vehicle.transmission.slice(1)}</span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <span>⛽</span>
-                            <span>{vehicle.fuelType}</span>
+                            <span>{vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1)}</span>
                           </div>
                         </div>
                         <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 text-sm font-semibold shadow-md hover:shadow-lg">
-                          View Details
+                          <Link to={`/vehicles/${vehicle.id}`}>View Details</Link>
                         </button>
                       </div>
                     ))}
