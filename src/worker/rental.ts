@@ -3,7 +3,7 @@ import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
 import { carPics, cars, requests } from "../db/schema";
-import { and, desc, eq, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gte, lt, SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import BaseURL from "../../BaseURL";
 
@@ -22,8 +22,7 @@ const carReq = new Hono<{
     zValidator(
       "json",
       z.object({
-        // carid should have names it   carID check if frontend has confict if name changed and rename
-        id: z.coerce.number().int(),
+        carId: z.coerce.number().int(),
         from: z.coerce.date(),
         to: z.coerce.date(),
         msg: z.string(),
@@ -36,11 +35,11 @@ const carReq = new Hono<{
         if (user === null) {
           return c.json({ message: "UnAuthorized" }, 401);
         }
-        const { id, from, to, msg } = c.req.valid("json");
+        const { carId, from, to, msg } = c.req.valid("json");
         const car = await db
           .select()
           .from(cars)
-          .where(and(eq(cars.id, id), eq(cars.status, "available")))
+          .where(and(eq(cars.id, carId), eq(cars.status, "available")))
           .limit(1);
         if (car.length == 0) {
           return c.json({ message: "Car Not Found or Unavailable" }, 404);
@@ -54,7 +53,7 @@ const carReq = new Hono<{
           await db
             .insert(requests)
             .values({
-              carId: id,
+              carId: carId,
               requestedBy: user.id,
               rentedFrom: from,
               rentedTo: to,
@@ -83,6 +82,15 @@ const carReq = new Hono<{
       z.object({
         page: z.coerce.number().min(1).default(1),
         pageSize: z.coerce.number().min(1).max(100).default(10),
+        filter: z.enum([
+          "all",
+          "pending",
+          "approved",
+          "rejected",
+          "cancelled",
+          "completed",
+          "expired",// request where there is pending status and rent from date was before today
+        ]),
       }),
     ),
     async (c) => {
@@ -91,13 +99,28 @@ const carReq = new Hono<{
         if (user == null) {
           return c.json({ message: "UnAuthorized" }, 401);
         }
-        const { page, pageSize } = c.req.valid("query");
+        const { page, pageSize, filter } = c.req.valid("query");
+        let filters: SQL<unknown>[] = [];
+        filters.push(eq(requests.requestedBy, user.id));
+        if (filter !== "all" && filter !== "expired" && filter !== "pending") {
+           filters.push(eq(requests.status, filter));
+        }else if (filter === "expired") {
+          filters.push(eq(requests.status, "pending"));
+          filters.push(lt(requests.rentedFrom, new Date()));
+        }else if (filter === "pending") {
+          filters.push(eq(requests.status, "pending"));
+          filters.push(gte(requests.rentedFrom, new Date()));
+        }
         const db = c.get("db");
         const req = await db
           .select()
           .from(requests)
           .innerJoin(cars, eq(requests.carId, cars.id))
-          .where(eq(requests.requestedBy, user.id))
+          .innerJoin(
+            carPics,
+            and(eq(carPics.carId, cars.id), eq(carPics.isCover, true)),
+          )
+          .where(and(...filters))
           .orderBy(desc(requests.requestedAt))
           .limit(pageSize)
           .offset((page - 1) * pageSize);
@@ -110,7 +133,8 @@ const carReq = new Hono<{
           reqAt: r.requests.requestedAt,
           from: r.requests.rentedFrom,
           to: r.requests.rentedTo,
-          status: r.requests.status,
+          status: (r.requests.rentedFrom <= new Date() && r.requests.status === "pending") ? "expired" : r.requests.status,
+          carPic: picBaseURL + r.carPics.url,
           price: r.cars.pricePerDay,
         }));
         return c.json(resp, 200);
@@ -122,53 +146,52 @@ const carReq = new Hono<{
   )
   //prolly should pagnate it later
   // requests i have made
-  .get("/myPendingReq", async (c) => {
-    try {
-      const user = c.get("user");
-      if (user == null) {
-        return c.json({ message: "UnAuthorized" }, 401);
-      }
-      const db = c.get("db");
-      const req = await db
-        .select()
-        .from(requests)
-        .innerJoin(cars, eq(requests.carId, cars.id))
-        .innerJoin(
-          carPics,
-          and(eq(carPics.carId, cars.id), eq(carPics.isCover, true)),
-        )
-        .where(
-          and(
-            // should also consider like a if currently not available but current req will end before our startt date
-            eq(cars.status, "available"),
-            eq(requests.requestedBy, user.id),
-            eq(requests.status, "pending"),
-            lt(requests.rentedFrom, new Date()),
-          ),
-        );
-
-      return c.json(
-        req.map((r) => ({
-          id: r.requests.id,
-          carBrand: r.cars.brand,
-          carModel: r.cars.model,
-          carYear: r.cars.year,
-          carPic: picBaseURL + r.carPics.url,
-          reqAt: r.requests.requestedAt,
-          from: r.requests.rentedFrom,
-          to: r.requests.rentedTo,
-          message: r.requests.reqMessage,
-          //check sql query
-          status: "pending",
-          price: r.cars.pricePerDay,
-        })),
-        200,
-      );
-    } catch (err) {
-      console.error(err);
-      return c.json({ message: "Internal Server Error" }, 500);
-    }
-  })
+  // .get("/myPendingReq", async (c) => {
+  //   try {
+  //     const user = c.get("user");
+  //     if (user == null) {
+  //       return c.json({ message: "UnAuthorized" }, 401);
+  //     }
+  //     const db = c.get("db");
+  //     const req = await db
+  //       .select()
+  //       .from(requests)
+  //       .innerJoin(cars, eq(requests.carId, cars.id))
+  //       .innerJoin(
+  //         carPics,
+  //         and(eq(carPics.carId, cars.id), eq(carPics.isCover, true)),
+  //       )
+  //       .where(
+  //         and(
+  //           // should also consider like a if currently not available but current req will end before our startt date
+  //           eq(cars.status, "available"),
+  //           eq(requests.requestedBy, user.id),
+  //           eq(requests.status, "pending"),
+  //           lt(requests.rentedFrom, new Date()),
+  //         ),
+  //       );
+  //     return c.json(
+  //       req.map((r) => ({
+  //         id: r.requests.id,
+  //         carBrand: r.cars.brand,
+  //         carModel: r.cars.model,
+  //         carYear: r.cars.year,
+  //         carPic: picBaseURL + r.carPics.url,
+  //         reqAt: r.requests.requestedAt,
+  //         from: r.requests.rentedFrom,
+  //         to: r.requests.rentedTo,
+  //         message: r.requests.reqMessage,
+  //         //check sql query
+  //         status: "pending",
+  //         price: r.cars.pricePerDay,
+  //       })),
+  //       200,
+  //     );
+  //   } catch (err) {
+  //     console.error(err);
+  //     return c.json({ message: "Internal Server Error" }, 500);
+  //   }
+  // })
   // pending requests to my cars
   .get("/pendingRequests", async (c) => {
     try {
@@ -192,7 +215,7 @@ const carReq = new Hono<{
         );
 
       const resp = req.map((elem) => ({
-        id: elem.requests.id,
+        reqId: elem.requests.id,
         requestedAt: elem.requests.requestedAt,
         rentedFrom: elem.requests.rentedFrom,
         rentedTo: elem.requests.rentedTo,
