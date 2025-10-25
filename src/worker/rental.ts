@@ -3,6 +3,7 @@ import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
 import { carPics, cars, requests } from "../db/schema";
+import {hash,verify} from "../lib/hash";
 import { and, desc, eq, gte, lt, SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import BaseURL from "../../BaseURL";
@@ -89,7 +90,7 @@ const carReq = new Hono<{
           "rejected",
           "cancelled",
           "completed",
-          "expired",// request where there is pending status and rent from date was before today
+          "expired", // request where there is pending status and rent from date was before today
         ]),
       }),
     ),
@@ -103,11 +104,11 @@ const carReq = new Hono<{
         let filters: SQL<unknown>[] = [];
         filters.push(eq(requests.requestedBy, user.id));
         if (filter !== "all" && filter !== "expired" && filter !== "pending") {
-           filters.push(eq(requests.status, filter));
-        }else if (filter === "expired") {
+          filters.push(eq(requests.status, filter));
+        } else if (filter === "expired") {
           filters.push(eq(requests.status, "pending"));
           filters.push(lt(requests.rentedFrom, new Date()));
-        }else if (filter === "pending") {
+        } else if (filter === "pending") {
           filters.push(eq(requests.status, "pending"));
           filters.push(gte(requests.rentedFrom, new Date()));
         }
@@ -133,9 +134,14 @@ const carReq = new Hono<{
           reqAt: r.requests.requestedAt,
           from: r.requests.rentedFrom,
           to: r.requests.rentedTo,
-          status: (r.requests.rentedFrom <= new Date() && r.requests.status === "pending") ? "expired" : r.requests.status,
+          status:
+            r.requests.rentedFrom <= new Date() &&
+            r.requests.status === "pending"
+              ? "expired"
+              : r.requests.status,
           carPic: picBaseURL + r.carPics.url,
           price: r.cars.pricePerDay,
+          hasGPS: r.cars.gps,
         }));
         return c.json(resp, 200);
       } catch (err) {
@@ -204,13 +210,15 @@ const carReq = new Hono<{
         .select()
         .from(requests)
         .innerJoin(cars, eq(requests.carId, cars.id))
-        .innerJoin(carPics, eq(cars.id, carPics.id))
+        .innerJoin(
+          carPics,
+          and(eq(cars.id, carPics.id), eq(carPics.isCover, true)),
+        )
         .where(
           and(
             eq(cars.userId, user.id),
             eq(requests.status, "pending"),
             gte(requests.rentedFrom, new Date()),
-            eq(carPics.isCover, true),
           ),
         );
 
@@ -240,7 +248,7 @@ const carReq = new Hono<{
       "json",
       z.object({
         // request id
-        id: z.coerce.number().int(),
+        reqId: z.coerce.number().int(),
         action: z.enum(["approve", "reject"]), //??
         reason: z.string().optional(),
       }),
@@ -251,7 +259,7 @@ const carReq = new Hono<{
         if (user == null) {
           return c.json({ message: "UnAuthorized" }, 401);
         }
-        const { id, action, reason } = c.req.valid("json");
+        const { reqId: id, action, reason } = c.req.valid("json");
         const db = c.get("db");
         const req = await db
           .select()
@@ -319,8 +327,9 @@ const carReq = new Hono<{
       "json",
       z.object({
         // car id
-        id: z.coerce.number().int(),
+        carId: z.coerce.number().int(),
         gpsId: z.string().optional(),
+        gpsPass: z.string().optional(),
       }),
     ),
     async (c) => {
@@ -329,7 +338,7 @@ const carReq = new Hono<{
         if (user == null) {
           return c.json({ message: "UnAuthorized" }, 401);
         }
-        const { id, gpsId } = c.req.valid("json");
+        const { carId: id, gpsId, gpsPass} = c.req.valid("json");
         const db = c.get("db");
         // let carID=await db
         //   .update(cars)
@@ -341,7 +350,11 @@ const carReq = new Hono<{
         //       eq(cars.status, "approved"),
         //     ),
         //   ).returning({ id: cars.id });
-        let carID: { id: number }[] = [];
+        let carID: { id: number, gps: boolean  }[] = [];
+        let passHash: string | undefined = undefined;
+        if (gpsId && gpsPass && gpsPass.length > 0) {
+          passHash = await hash(gpsPass);
+        }
         await db.transaction(async (tx) => {
           carID = await tx
             .update(cars)
@@ -353,55 +366,61 @@ const carReq = new Hono<{
                 eq(cars.status, "approved"),
               ),
             )
-            .returning({ id: cars.id });
-          if (carID.length > 0 && gpsId) {
+            .returning({ id: cars.id, gps: cars.gps });
+          if (carID.length == 0) {
+            return c.json({ message: "Car Not Found or available" }, 404);
+          }
+          if(carID[0].gps && (gpsId==undefined || gpsPass==undefined)){
+            throw new Error("GPS details required for this car");
+          }
+          if (carID[0].gps) {
             await tx
               .update(requests)
-              .set({ gpsId: gpsId })
+              .set({ gpsId: gpsId,gpsPass: passHash })
               .where(
                 and(eq(requests.carId, id), eq(requests.status, "approved")),
               );
           }
         });
-        if (carID.length == 0) {
-          return c.json({ message: "Car Not Found or Invalid Status" }, 404);
-        }
         return c.json({ message: "Car is sent for rent" }, 200);
       } catch (err) {
         console.error(err);
+        if (err instanceof Error && err.message === "GPS details required for this car") {
+          return c.json({ message: err.message }, 400);
+        }
         return c.json({ message: "Internal Server Error" }, 500);
       }
     },
   )
   // requests that are currently active (ie approved or renting) for my cars
-  .get("/currReq", async (c) => {
-    const user = c.get("user");
-    if (user == null) {
-      return c.json({ message: "UnAuthorized" }, 401);
-    }
-    const db = c.get("db");
-    const resp = await db
-      .select()
-      .from(requests)
-      .innerJoin(cars, eq(requests.carId, cars.id))
-      .where(and(eq(cars.userId, user.id), eq(requests.status, "approved")))
-      .orderBy(desc(requests.requestedAt));
-    return c.json(
-      resp.map((r) => ({
-        id: r.requests.id,
-        carId: r.cars.id,
-        carBrand: r.cars.brand,
-        carModel: r.cars.model,
-        //for frontend if status is approved show button to send
-        //else if status is completed show button to complete and also button to track if gps
-        status: r.cars.status,
-        startDate: r.requests.rentedFrom,
-        endDate: r.requests.rentedTo,
-        gps: r.cars.gps,
-      })),
-      200,
-    );
-  });
+  // .get("/currReq", async (c) => {
+  //   const user = c.get("user");
+  //   if (user == null) {
+  //     return c.json({ message: "UnAuthorized" }, 401);
+  //   }
+  //   const db = c.get("db");
+  //   const resp = await db
+  //     .select()
+  //     .from(requests)
+  //     .innerJoin(cars, eq(requests.carId, cars.id))
+  //     .where(and(eq(cars.userId, user.id), eq(requests.status, "approved")))
+  //     .orderBy(desc(requests.requestedAt));
+  //   return c.json(
+  //     resp.map((r) => ({
+  //       id: r.requests.id,
+  //       carId: r.cars.id,
+  //       carBrand: r.cars.brand,
+  //       carModel: r.cars.model,
+  //       //for frontend if status is approved show button to send
+  //       //else if status is completed show button to complete and also button to track if gps
+  //       status: r.cars.status,
+  //       startDate: r.requests.rentedFrom,
+  //       endDate: r.requests.rentedTo,
+  //       gps: r.cars.gps,
+  //     })),
+  //     200,
+  //   );
+  // });
 export default carReq;
 
 // .get("/allMyReq", async (c) => {

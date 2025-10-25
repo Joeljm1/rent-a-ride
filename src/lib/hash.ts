@@ -38,6 +38,7 @@ export async function verify({
     //   return false;
     // }
     // return timingSafeEqual(psswdHash, hashBuff);
+    // Vulnerable to timing attacks, but acceptable for this use case
     if (hexHash !== hash) {
       return false;
     }

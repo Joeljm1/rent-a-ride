@@ -95,7 +95,7 @@ export const cars = sqliteTable(
     createdAt: integer("created_at", { mode: "timestamp" })
       .$defaultFn(() => new Date())
       .notNull(),
-    gps: integer("gps", { mode: "boolean" }),
+    gps: integer("gps", { mode: "boolean" }).notNull(),
   },
   (table) => [
     check(
