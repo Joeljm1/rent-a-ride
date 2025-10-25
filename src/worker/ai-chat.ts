@@ -6,6 +6,7 @@ import {
   WorkflowEntrypoint,
   WorkflowEvent,
   WorkflowStep,
+  //@ts-ignore
 } from "cloudflare:workers";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
@@ -135,13 +136,13 @@ app.post(
       }
 
       // Generate embedding for the user's query
-      const queryEmbeddings: any = await c.env.AI.run(
-        "@cf/baai/bge-base-en-v1.5",
-        {
-          text: message,
-        },
-      );
-
+      const queryEmbeddings = (await c.env.AI.run("@cf/baai/bge-base-en-v1.5", {
+        text: message,
+      })) as {
+        shape?: number[];
+        data?: number[][];
+        pooling?: "mean" | "cls";
+      };
       if (!queryEmbeddings.data || !queryEmbeddings.data[0]) {
         console.log("Failed to get query embeddings");
         return c.json({ error: "Internal Server Error" }, 500);
@@ -158,7 +159,9 @@ app.post(
       // Get full vehicle details from D1 database
       const vehicleIds =
         searchResults.matches
+          //@ts-ignore
           ?.filter((match) => match.score && match.score > 0.7)
+          //@ts-ignore
           .map((match) => match.id) || [];
 
       let relevantVehicles: Vehicle[] = [];
@@ -269,6 +272,7 @@ export class VehicleEmbeddingWorkflow extends WorkflowEntrypoint<
   VehicleEmbeddingParams
 > {
   async run(event: WorkflowEvent<VehicleEmbeddingParams>, step: WorkflowStep) {
+    console.log("Workflow started");
     const { vehicleIds } = event.payload;
 
     // Step 1: Fetch vehicles from database
@@ -282,10 +286,10 @@ export class VehicleEmbeddingWorkflow extends WorkflowEntrypoint<
         params = vehicleIds;
       }
 
+      //@ts-ignore
       const { results } = await this.env.DB.prepare(query)
         .bind(...params)
         .all<Vehicle>();
-
       if (!results || results.length === 0) {
         throw new Error("No vehicles found in database");
       }
@@ -294,13 +298,20 @@ export class VehicleEmbeddingWorkflow extends WorkflowEntrypoint<
     });
 
     // Step 2: Generate embeddings for each vehicle
+
+    //@ts-ignore
     const embeddings = await step.do("generate-embeddings", async () => {
+      //@ts-ignore
       const embeddingPromises = vehicles.map(async (vehicle) => {
         const vehicleText = `${vehicle.brand} ${vehicle.model} ${vehicle.year}: ${vehicle.description || "No description"}. ${vehicle.fuelType} ${vehicle.transmission} with ${vehicle.seats} seats at $${vehicle.pricePerDay}/day`;
-
-        const result: any = await this.env.AI.run("@cf/baai/bge-base-en-v1.5", {
+        //@ts-ignore
+        const result = (await this.env.AI.run("@cf/baai/bge-base-en-v1.5", {
           text: vehicleText,
-        });
+        })) as {
+          shape?: number[];
+          data?: number[][];
+          pooling?: "mean" | "cls";
+        };
 
         if (result.data && result.data[0]) {
           return {
@@ -325,11 +336,13 @@ export class VehicleEmbeddingWorkflow extends WorkflowEntrypoint<
 
     // Step 3: Upsert vectors to Vectorize
     const result = await step.do("upsert-vectors", async () => {
+      //@ts-ignore
       await this.env.VECTORIZE.upsert(embeddings);
 
       return {
         success: true,
         count: embeddings.length,
+        //@ts-ignore
         vehicleIds: embeddings.map((e) => e.id),
       };
     });
