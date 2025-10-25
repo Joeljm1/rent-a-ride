@@ -15,8 +15,6 @@ import { cars, carPics, requests, users } from "../db/schema";
 import {
   and,
   eq,
-  exists,
-  not,
   inArray,
   sql,
   desc,
@@ -92,7 +90,7 @@ const carApp = new Hono<{
           description,
           fuelType,
           transmission,
-          Cover,
+          // Cover,
           mileage,
           pricePerDay,
           gps,
@@ -663,7 +661,8 @@ const carApp = new Hono<{
         }
         try {
           // not sure if id needed
-          const reqID = await db
+          // const reqID =
+          await db
             .insert(requests)
             .values({
               carId: id,

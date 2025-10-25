@@ -6,6 +6,7 @@ import {
   WorkflowEntrypoint,
   WorkflowEvent,
   WorkflowStep,
+  //@ts-ignore
 } from "cloudflare:workers";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
@@ -48,6 +49,7 @@ app.post(
         forceRefresh: forceRefresh,
       };
 
+      // Trigger the workflow (returns immediately)
       const instance = await c.env.VEHICLE_EMBEDDING_WORKFLOW.create({
         params,
       });
@@ -69,64 +71,6 @@ app.post(
     }
   },
 );
-
-// Direct initialization (for local development / testing)
-app.post("/initialize-direct", async (c) => {
-  try {
-    const { results: vehicles } = await c.env.DB.prepare(
-      `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay FROM cars`
-    ).all<Vehicle>();
-
-    if (!vehicles || vehicles.length === 0) {
-      return c.json({ error: "No vehicles found in database" }, 404);
-    }
-
-    // Generate embeddings
-    const embeddingPromises = vehicles.map(async (vehicle) => {
-      const vehicleText = `${vehicle.brand} ${vehicle.model} ${vehicle.year}: ${vehicle.description || "No description"}. ${vehicle.fuelType} ${vehicle.transmission} with ${vehicle.seats} seats at Rs.${vehicle.pricePerDay}/day`;
-
-      const result: any = await c.env.AI.run("@cf/baai/bge-base-en-v1.5", {
-        text: vehicleText,
-      });
-
-      if (result.data && result.data[0]) {
-        return {
-          id: vehicle.id.toString(),
-          values: result.data[0],
-          metadata: {
-            brand: vehicle.brand,
-            model: vehicle.model,
-            year: vehicle.year,
-            pricePerDay: vehicle.pricePerDay,
-          },
-        };
-      }
-
-      throw new Error(`Failed to generate embedding for vehicle ${vehicle.id}`);
-    });
-
-    const embeddings = await Promise.all(embeddingPromises);
-    console.log(`Generated embeddings for ${embeddings.length} vehicles.`);
-    // Upsert to Vectorize
-    const upsertResult = await c.env.VECTORIZE.upsert(embeddings);
-    console.log("Upsert result:", upsertResult);
-    return c.json({
-      success: true,
-      message: "Initialization complete",
-      count: embeddings.length,
-      vehicles: vehicles.map((v) => ({ id: v.id, brand: v.brand, model: v.model })),
-    });
-  } catch (error) {
-    console.error("Direct initialization failed:", error);
-    return c.json(
-      {
-        error: "Initialization failed",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      500,
-    );
-  }
-});
 
 // Check workflow status
 app.get("/initialize/status/:id", async (c) => {
@@ -183,7 +127,8 @@ app.post(
       }
 
       if (!c.env.VECTORIZE) {
-        return c.json({ error: "Vector database not configured" }, 500);
+        console.log("Vector database not configured");
+        return c.json({ error: "Internal Server Error" }, 500);
       }
 
       if (!c.env.DB) {
@@ -191,26 +136,32 @@ app.post(
       }
 
       // Generate embedding for the user's query
-      const queryEmbeddings: any = await c.env.AI.run("@cf/baai/bge-base-en-v1.5",
-        { text: message,},
-      );
-
+      const queryEmbeddings = (await c.env.AI.run("@cf/baai/bge-base-en-v1.5", {
+        text: message,
+      })) as {
+        shape?: number[];
+        data?: number[][];
+        pooling?: "mean" | "cls";
+      };
       if (!queryEmbeddings.data || !queryEmbeddings.data[0]) {
-        return c.json({ error: "Failed to generate query embedding" }, 500);
+        console.log("Failed to get query embeddings");
+        return c.json({ error: "Internal Server Error" }, 500);
       }
 
       const queryVector = queryEmbeddings.data[0];
 
       // Search for similar vehicles in the vector database
       const searchResults = await c.env.VECTORIZE.query(queryVector, {
-        topK: 5,
+        topK: 3,
         returnMetadata: true,
       });
 
       // Get full vehicle details from D1 database
       const vehicleIds =
         searchResults.matches
-          ?.filter((match) => match.score && match.score > 0.71)
+          //@ts-ignore
+          ?.filter((match) => match.score && match.score > 0.7)
+          //@ts-ignore
           .map((match) => match.id) || [];
 
       let relevantVehicles: Vehicle[] = [];
@@ -229,100 +180,40 @@ app.post(
           relevantVehicles = results;
         }
       }
-      console.log("Relevant vehicles from vector search:", relevantVehicles);
-      
-      // Fallback: If vector search didn't find anything, try keyword search
-      if (relevantVehicles.length === 0) {
-        const lowerMessage = message.toLowerCase();
-        let whereClause = "";
-        
-        // Priority 1: Check for fuel types (most specific)
-        if (lowerMessage.includes('electric') || lowerMessage.match(/\bev\b/) || lowerMessage.includes('tesla')) {
-          whereClause = "fuel_type LIKE '%electric%'";
-        } else if (lowerMessage.includes('diesel')) {
-          whereClause = "fuel_type LIKE '%diesel%'";
-        } else if (lowerMessage.includes('petrol') || lowerMessage.includes('gasoline')) {
-          whereClause = "fuel_type LIKE '%petrol%'";
-        }
-        // Priority 2: Check for brands
-        else if (lowerMessage.includes('bmw')) {
-          whereClause = "brand LIKE '%bmw%'";
-        } else if (lowerMessage.includes('toyota')) {
-          whereClause = "brand LIKE '%toyota%'";
-        } else if (lowerMessage.includes('honda')) {
-          whereClause = "brand LIKE '%honda%'";
-        } else if (lowerMessage.includes('ford')) {
-          whereClause = "brand LIKE '%ford%'";
-        } else if (lowerMessage.includes('chevrolet')) {
-          whereClause = "brand LIKE '%chevrolet%'";
-        } else if (lowerMessage.includes('mazda')) {
-          whereClause = "brand LIKE '%mazda%'";
-        }
-        // Priority 3: Check for vehicle types
-        else if (lowerMessage.includes('suv')) {
-          whereClause = "(description LIKE '%SUV%' OR model LIKE '%SUV%' OR model LIKE '%cr-v%' OR model LIKE '%cx-%')";
-        } else if (lowerMessage.includes('sedan')) {
-          whereClause = "(description LIKE '%sedan%')";
-        } else if (lowerMessage.includes('truck') || lowerMessage.includes('pickup')) {
-          whereClause = "(description LIKE '%truck%' OR description LIKE '%pickup%' OR model LIKE '%f-150%')";
-        }
-        
-        if (whereClause) {
-          const { results } = await c.env.DB.prepare(
-            `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay 
-             FROM cars 
-             WHERE ${whereClause}
-             LIMIT 10`
-          ).all<Vehicle>();
-          
-          if (results && results.length > 0) {
-            relevantVehicles = results;
-          }
-        }
-      }
 
       // Build context from relevant vehicles
       let contextMessage = "";
       if (relevantVehicles.length > 0) {
-        contextMessage = `=== COMPLETE VEHICLE INVENTORY (ONLY THESE EXIST) ===\n\n`;
+        contextMessage = `AVAILABLE VEHICLES IN DATABASE (YOU MUST ONLY RECOMMEND FROM THIS LIST):\n\n`;
         relevantVehicles.forEach((vehicle, index) => {
-          contextMessage += `Vehicle ${index + 1}:\n`;
-          contextMessage += `- EXACT Brand: ${vehicle.brand.toUpperCase()}\n`;
-          contextMessage += `- EXACT Model: ${vehicle.model.toUpperCase()}\n`;
-          contextMessage += `- EXACT Year: ${vehicle.year}\n`;
-          contextMessage += `- EXACT Price: Rs. ${vehicle.pricePerDay}/day\n`;
-          contextMessage += `- Fuel: ${vehicle.fuelType}\n`;
-          contextMessage += `- Transmission: ${vehicle.transmission}\n`;
-          contextMessage += `- Seats: ${vehicle.seats} Seats\n`;
-          contextMessage += `- Description: ${vehicle.description || "No description"}\n\n`;
+          contextMessage += `${index + 1}. ${vehicle.brand} ${vehicle.model} (${vehicle.year})\n`;
+          contextMessage += `   - Price: Rs. ${vehicle.pricePerDay}/day\n`;
+          contextMessage += `   - Type: ${vehicle.fuelType}, ${vehicle.transmission}\n`;
+          contextMessage += `   - Seats: ${vehicle.seats}\n`;
+          contextMessage += `   - Description: ${vehicle.description || "No description available"}\n\n`;
         });
-        contextMessage += `=== END OF INVENTORY ===\n`;
-        contextMessage += `\nYou MUST respond with recommendations using ONLY the vehicles listed above.\n`;
-        contextMessage += `Copy the EXACT brand, model, year, and price. Do NOT change any numbers or models.\n`;
-        contextMessage += `If you mention a vehicle, it MUST be copied word-for-word from the list above.`;
+        contextMessage += `\nREMINDER: These are the ONLY ${relevantVehicles.length} vehicles available. Do NOT suggest any other vehicles.`;
       } else {
         contextMessage = `NO MATCHING VEHICLES FOUND IN DATABASE.\nYou MUST tell the user we don't have vehicles matching their criteria and ask them to adjust their requirements.`;
       }
 
-      const systemPrompt = `You are a vehicle rental assistant with access to a limited inventory.
+      const systemPrompt = `You are a helpful vehicle rental assistant for a car rental company. Your role is to recommend vehicles ONLY from the provided database context.
 
-🚫 ABSOLUTE RESTRICTIONS:
-- Your ENTIRE inventory is listed in the next message
-- You CANNOT recommend ANY vehicle not in that list
-- You MUST copy vehicle details EXACTLY (brand, model, year, price)
-- DO NOT invent models like "X3", "X5", "320i" - only use models from the list
-- DO NOT change prices - use EXACT prices from the list
-- DO NOT change years - use EXACT years from the list
+CRITICAL RULES:
+- You MUST ONLY recommend vehicles that are explicitly listed in the context below
+- NEVER make up vehicle models, prices, or specifications
+- NEVER suggest vehicles not in the provided list
+- If no suitable vehicles match the user's needs, politely explain that we don't have matching vehicles in our current inventory
+- NEVER invent any Vehicles, Cars, or any other models not in the database
+- ALL prices and details MUST come from the context data
 
-✅ CORRECT Example:
-List shows: "BMW m3 (2023) - Rs. 5000/day"
-Your response: "BMW M3 (2023) for Rs. 5000 per day"
-
-❌ WRONG Example:
-List shows: "BMW m3 (2023) - Rs. 5000/day"
-Your response: "BMW X3 (2020) for $120/day" ← This is FORBIDDEN
-
-When recommending, copy from the list EXACTLY.`;
+Guidelines:
+- Use ONLY the provided vehicle context to make specific recommendations
+- Ask clarifying questions if the user's needs are unclear (budget, number of passengers, trip type, etc.)
+- Be friendly, concise, and helpful
+- If no suitable vehicles are found in the context, say: "I don't have any vehicles matching those criteria in our current inventory. Would you like to adjust your requirements?"
+- Always mention the exact price per day from the context
+- Only highlight features that are actually listed in the vehicle's data`;
 
       interface Message {
         role: "system" | "user" | "assistant";
@@ -346,30 +237,8 @@ When recommending, copy from the list EXACTLY.`;
         messages,
       });
 
-      // POST-PROCESS: Remove any hallucinated content by ensuring only our vehicles are mentioned
-      let finalResponse = aiResponse.response || "";
-      
-      // If we have relevant vehicles, append a structured list to prevent hallucinations
-      if (relevantVehicles.length > 0) {
-        finalResponse = `Based on your requirements, here are the available vehicles:\n\n`;
-        
-        relevantVehicles.forEach((vehicle, index) => {
-          finalResponse += `${index + 1}. ${vehicle.brand.toUpperCase()} ${vehicle.model.toUpperCase()} (${vehicle.year})\n`;
-          finalResponse += `   - Price: Rs. ${vehicle.pricePerDay}/day\n`;
-          finalResponse += `   - Seats: ${vehicle.seats} passengers\n`;
-          finalResponse += `   - Transmission: ${vehicle.transmission.charAt(0).toUpperCase() + vehicle.transmission.slice(1)}\n`;
-          finalResponse += `   - Fuel Type: ${vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1)}\n`;
-          if (vehicle.description) {
-            finalResponse += `   - ${vehicle.description}\n`;
-          }
-          finalResponse += `\n`;
-        });
-        
-        finalResponse += `These are all the available options in our current inventory. Would you like to know more about any of these vehicles?`;
-      }
-
       return c.json({
-        response: finalResponse,
+        response: aiResponse.response,
         relevantVehicles: relevantVehicles.map((v) => ({
           id: v.id,
           brand: v.brand,
@@ -403,92 +272,82 @@ export class VehicleEmbeddingWorkflow extends WorkflowEntrypoint<
   VehicleEmbeddingParams
 > {
   async run(event: WorkflowEvent<VehicleEmbeddingParams>, step: WorkflowStep) {
-    try {
-      const { vehicleIds } = event.payload;
-      // Step 1: Fetch vehicles from database
-      const vehicles = await step.do("fetch-vehicles", async () => {
-        try {
-          let query = `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay FROM cars`;
-          let params: number[] = [];
+    console.log("Workflow started");
+    const { vehicleIds } = event.payload;
 
-          if (vehicleIds && vehicleIds.length > 0) {
-            const placeholders = vehicleIds.map(() => "?").join(",");
-            query += ` WHERE id IN (${placeholders})`;
-            params = vehicleIds;
-          }
+    // Step 1: Fetch vehicles from database
+    const vehicles = await step.do("fetch-vehicles", async () => {
+      let query = `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay FROM cars`;
+      let params: number[] = [];
 
-          const { results } = await this.env.DB.prepare(query)
-            .bind(...params)
-            .all<Vehicle>();
+      if (vehicleIds && vehicleIds.length > 0) {
+        const placeholders = vehicleIds.map(() => "?").join(",");
+        query += ` WHERE id IN (${placeholders})`;
+        params = vehicleIds;
+      }
 
-          if (!results || results.length === 0) {
-            throw new Error("No vehicles found in database");
-          }
+      //@ts-ignore
+      const { results } = await this.env.DB.prepare(query)
+        .bind(...params)
+        .all<Vehicle>();
+      if (!results || results.length === 0) {
+        throw new Error("No vehicles found in database");
+      }
 
-          return results;
-        } catch (error) {
-          console.error("Step 1 failed:", error);
-          throw error;
-        }
-      });
+      return results;
+    });
 
-      // Step 2: Generate embeddings for each vehicle
-      const embeddings = await step.do("generate-embeddings", async () => {
-        try {
-          const embeddingPromises = vehicles.map(async (vehicle) => {
-            const vehicleText = `${vehicle.brand} ${vehicle.model} ${vehicle.year}: ${vehicle.description || "No description"}. ${vehicle.fuelType} ${vehicle.transmission} with ${vehicle.seats} seats at $${vehicle.pricePerDay}/day`;
+    // Step 2: Generate embeddings for each vehicle
 
-            const result: any = await this.env.AI.run("@cf/baai/bge-base-en-v1.5", {
-              text: vehicleText,
-            });
+    //@ts-ignore
+    const embeddings = await step.do("generate-embeddings", async () => {
+      //@ts-ignore
+      const embeddingPromises = vehicles.map(async (vehicle) => {
+        const vehicleText = `${vehicle.brand} ${vehicle.model} ${vehicle.year}: ${vehicle.description || "No description"}. ${vehicle.fuelType} ${vehicle.transmission} with ${vehicle.seats} seats at $${vehicle.pricePerDay}/day`;
+        //@ts-ignore
+        const result = (await this.env.AI.run("@cf/baai/bge-base-en-v1.5", {
+          text: vehicleText,
+        })) as {
+          shape?: number[];
+          data?: number[][];
+          pooling?: "mean" | "cls";
+        };
 
-            if (result.data && result.data[0]) {
-              return {
-                id: vehicle.id.toString(),
-                values: result.data[0],
-                metadata: {
-                  brand: vehicle.brand,
-                  model: vehicle.model,
-                  year: vehicle.year,
-                  pricePerDay: vehicle.pricePerDay,
-                },
-              };
-            }
-
-            throw new Error(
-              `Failed to generate embedding for vehicle ${vehicle.id}`,
-            );
-          });
-
-          const results = await Promise.all(embeddingPromises);
-          return results;
-        } catch (error) {
-          console.error("Step 2 failed:", error);
-          throw error;
-        }
-      });
-
-      // Step 3: Upsert vectors to Vectorize
-      const result = await step.do("upsert-vectors", async () => {
-        try {
-          await this.env.VECTORIZE.upsert(embeddings);
-
+        if (result.data && result.data[0]) {
           return {
-            success: true,
-            count: embeddings.length,
-            vehicleIds: embeddings.map((e) => e.id),
+            id: vehicle.id.toString(),
+            values: result.data[0],
+            metadata: {
+              brand: vehicle.brand,
+              model: vehicle.model,
+              year: vehicle.year,
+              pricePerDay: vehicle.pricePerDay,
+            },
           };
-        } catch (error) {
-          console.error("Step 3 failed:", error);
-          throw error;
         }
+
+        throw new Error(
+          `Failed to generate embedding for vehicle ${vehicle.id}`,
+        );
       });
 
-      return result;
-    } catch (error) {
-      console.error("Workflow failed:", error);
-      throw error;
-    }
+      return await Promise.all(embeddingPromises);
+    });
+
+    // Step 3: Upsert vectors to Vectorize
+    const result = await step.do("upsert-vectors", async () => {
+      //@ts-ignore
+      await this.env.VECTORIZE.upsert(embeddings);
+
+      return {
+        success: true,
+        count: embeddings.length,
+        //@ts-ignore
+        vehicleIds: embeddings.map((e) => e.id),
+      };
+    });
+
+    return result;
   }
 }
 

@@ -49,7 +49,8 @@ const carReq = new Hono<{
         }
         try {
           // not sure if id needed
-          const reqID = await db
+          // const reqID =
+          await db
             .insert(requests)
             .values({
               carId: id,
@@ -304,7 +305,7 @@ const carReq = new Hono<{
         if (user == null) {
           return c.json({ message: "UnAuthorized" }, 401);
         }
-        const { id,gpsId } = c.req.valid("json");
+        const { id, gpsId } = c.req.valid("json");
         const db = c.get("db");
         // let carID=await db
         //   .update(cars)
@@ -322,22 +323,20 @@ const carReq = new Hono<{
             .update(cars)
             .set({ status: "renting" })
             .where(
-            and(
-              eq(cars.id, id),
-              eq(cars.userId, user.id),
-              eq(cars.status, "approved"),
-            ),
-          ).returning({ id: cars.id });
-          if(carID.length>0 && gpsId){
-            await tx
-            .update(requests)
-            .set({ gpsId: gpsId })
-            .where(
               and(
-                eq(requests.carId, id),
-                eq(requests.status, "approved"),
+                eq(cars.id, id),
+                eq(cars.userId, user.id),
+                eq(cars.status, "approved"),
               ),
-            );
+            )
+            .returning({ id: cars.id });
+          if (carID.length > 0 && gpsId) {
+            await tx
+              .update(requests)
+              .set({ gpsId: gpsId })
+              .where(
+                and(eq(requests.carId, id), eq(requests.status, "approved")),
+              );
           }
         });
         if (carID.length == 0) {
@@ -357,28 +356,27 @@ const carReq = new Hono<{
       return c.json({ message: "UnAuthorized" }, 401);
     }
     const db = c.get("db");
-    const resp = await db.select()
+    const resp = await db
+      .select()
       .from(requests)
       .innerJoin(cars, eq(requests.carId, cars.id))
-      .where(
-        and(
-          eq(cars.userId, user.id),
-          eq(requests.status, "approved"),
-        ),
-      )
+      .where(and(eq(cars.userId, user.id), eq(requests.status, "approved")))
       .orderBy(desc(requests.requestedAt));
-    return c.json(resp.map((r) => ({
-      id: r.requests.id,
-      carId: r.cars.id,
-      carBrand: r.cars.brand,
-      carModel: r.cars.model,
-      //for frontend if status is approved show button to send
-      //else if status is completed show button to complete and also button to track if gps
-      status: r.cars.status,
-      startDate: r.requests.rentedFrom,
-      endDate: r.requests.rentedTo,
-      gps: r.cars.gps,
-  })), 200);
+    return c.json(
+      resp.map((r) => ({
+        id: r.requests.id,
+        carId: r.cars.id,
+        carBrand: r.cars.brand,
+        carModel: r.cars.model,
+        //for frontend if status is approved show button to send
+        //else if status is completed show button to complete and also button to track if gps
+        status: r.cars.status,
+        startDate: r.requests.rentedFrom,
+        endDate: r.requests.rentedTo,
+        gps: r.cars.gps,
+      })),
+      200,
+    );
   });
 export default carReq;
 
