@@ -83,15 +83,17 @@ const carReq = new Hono<{
       z.object({
         page: z.coerce.number().min(1).default(1),
         pageSize: z.coerce.number().min(1).max(100).default(10),
-        filter: z.enum([
-          "all",
-          "pending",
-          "approved",
-          "rejected",
-          "cancelled",
-          "completed",
-          "expired", // request where there is pending status and rent from date was before today
-        ]),
+        filter: z
+          .enum([
+            "all",
+            "pending",
+            "approved",
+            "rejected",
+            "cancelled",
+            "completed",
+            "expired", // request where there is pending status and rent from date was before today
+          ])
+          .default("all"),
       }),
     ),
     async (c) => {
@@ -212,7 +214,7 @@ const carReq = new Hono<{
         .innerJoin(cars, eq(requests.carId, cars.id))
         .innerJoin(
           carPics,
-          and(eq(cars.id, carPics.id), eq(carPics.isCover, true)),
+          and(eq(cars.id, carPics.carId), eq(carPics.isCover, true)),
         )
         .where(
           and(
@@ -274,11 +276,13 @@ const carReq = new Hono<{
           return c.json({ message: "Request already handled" }, 400);
         }
 
-        if (req[0].cars.status != "available") {
-          return c.json({ message: "Car not available" }, 400);
-        }
+        // if (req[0].cars.status != "available") {
+        //   return c.json({ message: "Car not available" }, 400);
+        // }
         if (action == "approve") {
           try {
+            // why tf is transaction not working
+            // D1 DOES NOT SUPPORT TRANSACTIONS !!!!!!!!!!!!!!!!!!!!!! 😡
             await db.transaction(async (tx) => {
               await tx
                 .update(requests)
@@ -291,10 +295,22 @@ const carReq = new Hono<{
             });
           } catch (e) {
             console.error(`Error updating db :${e}`);
-            return c.json(
-              { message: "Failed to approve request, try again" },
-              500,
-            );
+            try {
+              await db
+                .update(requests)
+                .set({ status: "approved" })
+                .where(eq(requests.id, id));
+              await db
+                .update(cars)
+                .set({ status: "approved" })
+                .where(eq(cars.id, req[0].cars.id));
+            } catch (fallbackError) {
+              console.error(`Fallback update also failed: ${fallbackError}`);
+              return c.json(
+                { message: "Failed to approve request, try again" },
+                500,
+              );
+            }
           }
           return c.json({ message: "Request Approved" }, 200);
         } else if (action == "reject") {

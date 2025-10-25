@@ -22,3 +22,55 @@ GET http://localhost:5173/api/cars/1 HTTP/1.1
 ### 
 
 GET http://localhost:5173/api/cars/models HTTP/1.1
+
+
+### 
+
+POST http://localhost:5173/api/rent/rent HTTP/1.1
+Content-Type: application/json
+Cookie: _xsrf=2|e6ed46f5|c2c267da26a0bb4a717c65c17f1d48ea|1760104022; better-auth.session_token=c4UkBpn9j2LcXWirb8uWUO6lcr4qoeHM.bDK%2FaMNSXb9OCzw4oVE1GyVFsu4Krx7SsLLvnlQYzXw%3D
+
+{
+  "carId": 1,
+  "from": "2025-10-26T17:58:10.856Z",
+  "msg": "hi",
+  "to": "2025-10-28T17:58:10.856Z"
+}
+
+
+### 
+
+GET localhost:5173/api/rent/allMyReq HTTP/1.1
+Cookie: _xsrf=2|e6ed46f5|c2c267da26a0bb4a717c65c17f1d48ea|1760104022; better-auth.session_token=c4UkBpn9j2LcXWirb8uWUO6lcr4qoeHM.bDK%2FaMNSXb9OCzw4oVE1GyVFsu4Krx7SsLLvnlQYzXw%3D
+
+
+### 
+
+GET localhost:5173/api/rent/pendingRequests HTTP/1.1
+Cookie: better-auth.session_token=g1Nbz8KVs1M80zQ1TFoqWPEz4ASklc5c.1AqKDNP%2B%2Bm%2FFGp%2FzJQXf8Ibz9cshpsqiA1XBMb26gJI%3D
+
+
+### 
+
+POST localhost:5173/api/rent/handleReq HTTP/1.1
+Content-Type: application/json
+Cookie: better-auth.session_token=c4UkBpn9j2LcXWirb8uWUO6lcr4qoeHM.bDK%2FaMNSXb9OCzw4oVE1GyVFsu4Krx7SsLLvnlQYzXw%3D
+
+{
+  "action": "approve",
+  "reason": "why not",
+  "reqId": 1
+}
+
+
+### 
+
+POST localhost:5173/api/rent/handleReq HTTP/1.1
+Content-Type: application/json
+Cookie: better-auth.session_token=g1Nbz8KVs1M80zQ1TFoqWPEz4ASklc5c.1AqKDNP%2B%2Bm%2FFGp%2FzJQXf8Ibz9cshpsqiA1XBMb26gJI%3D
+
+{
+  "action": "reject",
+  "reason": "why not",
+  "reqId": 2
+}
