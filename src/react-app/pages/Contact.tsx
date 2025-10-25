@@ -13,8 +13,8 @@ export default function Contact() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">Contact Us</h1>
-                <p className="text-blue-100 text-sm">We'd love to hear from you!</p>
+                <h1 className="text-2xl font-bold text-white tracking-tight">Contact Us</h1>
+                <p className="text-blue-100 text-sm font-medium tracking-wide">We'd love to hear from you!</p>
               </div>
             </div>
           </div>
@@ -24,7 +24,7 @@ export default function Contact() {
             <div className="max-w-3xl mx-auto space-y-8">
               {/* Intro */}
               <div className="text-center">
-                <p className="text-xl text-gray-700 dark:text-gray-300 font-semibold">
+                <p className="text-xl text-gray-700 dark:text-gray-300 font-semibold tracking-normal">
                   Have questions? Need support? We're here to help!
                 </p>
               </div>
@@ -42,9 +42,9 @@ export default function Contact() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                     </div>
-                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">Support</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Get help with your account</p>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:underline">
+                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 tracking-normal">Support</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-normal">Get help with your account</p>
+                    <span className="text-blue-600 dark:text-blue-400 font-semibold group-hover:underline tracking-wide">
                       support@rentARide.com
                     </span>
                   </div>
@@ -61,9 +61,9 @@ export default function Contact() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                       </svg>
                     </div>
-                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">Feedback</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Share your thoughts</p>
-                    <span className="text-purple-600 dark:text-purple-400 font-medium group-hover:underline">
+                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 tracking-normal">Feedback</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-normal">Share your thoughts</p>
+                    <span className="text-purple-600 dark:text-purple-400 font-semibold group-hover:underline tracking-wide">
                       feedback@rentARide.com
                     </span>
                   </div>
@@ -80,9 +80,9 @@ export default function Contact() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">General</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">General inquiries</p>
-                    <span className="text-pink-600 dark:text-pink-400 font-medium group-hover:underline">
+                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 tracking-normal">General</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-normal">General inquiries</p>
+                    <span className="text-pink-600 dark:text-pink-400 font-semibold group-hover:underline tracking-wide">
                       info@rentARide.com
                     </span>
                   </div>
@@ -98,10 +98,10 @@ export default function Contact() {
                     </svg>
                   </div>
                   <div className="text-center">
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Call us directly</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1 font-medium">Call us directly</p>
                     <a 
                       href="tel:+911234567890" 
-                      className="text-xl font-bold text-blue-600 dark:text-blue-400 hover:underline transition-all duration-300"
+                      className="text-xl font-bold text-blue-600 dark:text-blue-400 hover:underline transition-all duration-300 tracking-tight"
                     >
                       +91 12345 67890
                     </a>
@@ -111,13 +111,13 @@ export default function Contact() {
 
               {/* Additional Info */}
               <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl p-8 text-center shadow-xl">
-                <h2 className="text-xl font-bold text-white mb-3">Need Immediate Help?</h2>
-                <p className="text-blue-100 mb-4">
+                <h2 className="text-xl font-bold text-white mb-3 tracking-tight">Need Immediate Help?</h2>
+                <p className="text-blue-100 mb-4 font-normal tracking-wide">
                   Our support team typically responds within 24 hours. For urgent matters, please call us directly.
                 </p>
                 <div className="flex justify-center space-x-2">
                   <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  <span className="text-white text-sm font-medium">We're here to help!</span>
+                  <span className="text-white text-sm font-semibold tracking-wide">We're here to help!</span>
                 </div>
               </div>
             </div>

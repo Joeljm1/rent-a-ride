@@ -135,10 +135,10 @@ export default function Login() {
         )}
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md dark:shadow-lg p-8 border dark:border-gray-700">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-2 tracking-tight">
               Welcome Back
             </h1>
-            <p className="text-gray-600 dark:text-gray-300">Sign in to your car rental account</p>
+            <p className="text-gray-600 dark:text-gray-300 font-normal tracking-wide">Sign in to your car rental account</p>
           </div>
 
           <form className="space-y-6">
@@ -155,14 +155,14 @@ export default function Login() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-red-700">{error}</span>
+                <span className="text-red-700 dark:text-red-300 font-medium">{error}</span>
               </div>
             )}
 
             {success && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-3">
+              <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-500/50 rounded-lg p-4 flex items-center space-x-3">
                 <svg
-                  className="w-5 h-5 text-green-500 flex-shrink-0"
+                  className="w-5 h-5 text-green-500 dark:text-green-300 flex-shrink-0"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
@@ -172,7 +172,7 @@ export default function Login() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-green-700">
+                <span className="text-green-700 dark:text-green-300 font-medium">
                   Sign in successful! Redirecting you to the dashboard...
                 </span>
               </div>
@@ -264,7 +264,7 @@ export default function Login() {
 
             <button
               type="submit"
-              className={`w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white transition-all duration-200 ${
+              className={`w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white transition-all duration-200 tracking-wide ${
                 isLoading
                   ? "bg-blue-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
@@ -284,19 +284,19 @@ export default function Login() {
           </form>
 
           <div className="mt-6 text-center space-y-2">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-gray-600 dark:text-gray-300 font-normal">
               Don't have an account?{" "}
               <a
                 href="/register"
-                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold tracking-wide"
               >
                 Create one
               </a>
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-gray-600 dark:text-gray-300 font-normal">
               <a
                 href="/forgot-password"
-                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold tracking-wide"
               >
                 Forgot your password?
               </a>

@@ -218,7 +218,7 @@ app.post(
       const vehicleIds =
         searchResults.matches
           //@ts-ignore
-          ?.filter((match) => match.score && match.score > 0.7)
+          ?.filter((match) => match.score && match.score > 0.71)
           //@ts-ignore
           .map((match) => match.id) || [];
 

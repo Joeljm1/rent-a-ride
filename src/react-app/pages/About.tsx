@@ -15,8 +15,8 @@ export default function About() {
                                 </svg>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-white">About #RentARide</h1>
-                                <p className="text-blue-100 text-sm">Your trusted car rental platform</p>
+                                <h1 className="text-2xl font-bold text-white tracking-tight">About #RentARide</h1>
+                                <p className="text-blue-100 text-sm font-medium tracking-wide">Your trusted car rental platform</p>
                             </div>
                         </div>
                     </div>
@@ -26,13 +26,13 @@ export default function About() {
                         <div className="max-w-4xl mx-auto space-y-8">
                             {/* Mission Section */}
                             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900/50 dark:to-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
-                                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+                                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center tracking-tight">
                                     <svg className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                                     </svg>
                                     Our Mission
                                 </h2>
-                                <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
+                                <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed font-normal">
                                     We are dedicated to providing the best car rental experience by connecting renters with quality vehicles at competitive prices. Our platform makes it easy, secure, and convenient for everyone.
                                 </p>
                             </div>
@@ -47,8 +47,8 @@ export default function About() {
                                             </svg>
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 mb-2">Community-Driven</h3>
-                                            <p className="text-gray-600 dark:text-gray-400">Built by renters, for renters. Join thousands of satisfied customers.</p>
+                                            <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 mb-2 tracking-normal">Community-Driven</h3>
+                                            <p className="text-gray-600 dark:text-gray-400 font-normal">Built by renters, for renters. Join thousands of satisfied customers.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -61,8 +61,8 @@ export default function About() {
                                             </svg>
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 mb-2">Safe & Secure</h3>
-                                            <p className="text-gray-600 dark:text-gray-400">Verified hosts and fully insured vehicles for peace of mind.</p>
+                                            <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 mb-2 tracking-normal">Safe & Secure</h3>
+                                            <p className="text-gray-600 dark:text-gray-400 font-normal">Verified hosts and fully insured vehicles for peace of mind.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -75,8 +75,8 @@ export default function About() {
                                             </svg>
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 mb-2">Best Prices</h3>
-                                            <p className="text-gray-600 dark:text-gray-400">Transparent pricing with no hidden fees. Save up to 35%.</p>
+                                            <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 mb-2 tracking-normal">Best Prices</h3>
+                                            <p className="text-gray-600 dark:text-gray-400 font-normal">Transparent pricing with no hidden fees. Save up to 35%.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -89,8 +89,8 @@ export default function About() {
                                             </svg>
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 mb-2">Quick & Easy</h3>
-                                            <p className="text-gray-600 dark:text-gray-400">Book in minutes with our streamlined process.</p>
+                                            <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 mb-2 tracking-normal">Quick & Easy</h3>
+                                            <p className="text-gray-600 dark:text-gray-400 font-normal">Book in minutes with our streamlined process.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -98,11 +98,11 @@ export default function About() {
 
                             {/* CTA Section */}
                             <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl p-8 text-center shadow-xl">
-                                <h2 className="text-2xl font-bold text-white mb-4">Ready to Get Started?</h2>
-                                <p className="text-blue-100 mb-6 text-lg">Have questions or want to learn more about our services?</p>
+                                <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">Ready to Get Started?</h2>
+                                <p className="text-blue-100 mb-6 text-lg font-normal tracking-wide">Have questions or want to learn more about our services?</p>
                                 <Link 
                                     to="/contact" 
-                                    className="inline-block px-8 py-3 bg-white text-blue-600 dark:bg-gray-100 rounded-lg hover:bg-gray-50 font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                                    className="inline-block px-8 py-3 bg-white text-blue-600 dark:bg-gray-100 rounded-lg hover:bg-gray-50 font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl tracking-wide"
                                 >
                                     Contact Us
                                 </Link>
