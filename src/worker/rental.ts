@@ -307,16 +307,25 @@ const carReq = new Hono<{
           // } catch (e) {
           //   console.error(`Error updating db :${e}`);
           try {
-            await db
+            console.log(`Approving request ${id} for car ${req[0].cars.id}`);
+            
+            const requestUpdate = await db
               .update(requests)
               .set({ status: "approved" })
               .where(eq(requests.id, id));
-            await db
+            
+            console.log(`Request updated:`, requestUpdate);
+            
+            const carUpdate = await db
               .update(cars)
               .set({ status: "approved" })
               .where(eq(cars.id, req[0].cars.id));
-          } catch (fallbackError) {
-            console.error(`Fallback update also failed: ${fallbackError}`);
+            
+            console.log(`Car updated:`, carUpdate);
+            
+            return c.json({ message: "Request Approved" }, 200);
+          } catch (error) {
+            console.error(`Error approving request: ${error}`);
             return c.json(
               { message: "Failed to approve request, try again" },
               500,
@@ -341,6 +350,59 @@ const carReq = new Hono<{
           return c.json({ message: "Request Rejected" }, 200);
         } else {
           return c.json({ message: "Request invalid" }, 400);
+        }
+      } catch (err) {
+        console.error(err);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
+    },
+  )
+  // Cancel a rental request (user can cancel their own pending request)
+  .post(
+    "/cancelReq",
+    zValidator(
+      "json",
+      z.object({
+        reqId: z.coerce.number().int(),
+      }),
+    ),
+    async (c) => {
+      try {
+        const user = c.get("user");
+        if (user == null) {
+          return c.json({ message: "UnAuthorized" }, 401);
+        }
+        const { reqId: id } = c.req.valid("json");
+        const db = c.get("db");
+        
+        // Verify user owns this request and it's in pending status
+        const req = await db
+          .select()
+          .from(requests)
+          .where(and(eq(requests.id, id), eq(requests.requestedBy, user.id)))
+          .limit(1);
+        
+        if (req.length == 0) {
+          return c.json({ message: "Request Not Found" }, 404);
+        }
+        
+        if (req[0].status != "pending") {
+          return c.json({ message: "Can only cancel pending requests" }, 400);
+        }
+
+        try {
+          await db
+            .update(requests)
+            .set({ status: "cancelled" })
+            .where(eq(requests.id, id));
+          
+          return c.json({ message: "Request Cancelled Successfully" }, 200);
+        } catch (e) {
+          console.error(`Error cancelling request: ${e}`);
+          return c.json(
+            { message: "Failed to cancel request, try again" },
+            500,
+          );
         }
       } catch (err) {
         console.error(err);

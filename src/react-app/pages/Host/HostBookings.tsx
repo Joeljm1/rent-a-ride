@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
@@ -27,9 +27,10 @@ export default function HostRequests(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<RequestStatus>("all");
   const [page, setPage] = useState<number>(1);
+  const [cancellingReqId, setCancellingReqId] = useState<number | null>(null);
   const pageSize = 10;
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(
@@ -51,11 +52,49 @@ export default function HostRequests(): React.ReactElement {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, page]);
 
   useEffect(() => {
     fetchRequests();
-  }, [filter, page]);
+  }, [fetchRequests]);
+
+  const handleCancelRequest = async (reqId: number) => {
+    if (!confirm("Are you sure you want to cancel this rental request?")) {
+      return;
+    }
+
+    try {
+      setCancellingReqId(reqId);
+      const response = await fetch(`${BaseURL}/api/rent/cancelReq`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          reqId,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to cancel request");
+      }
+
+      // Update the request status in the local state
+      setRequests((prev) =>
+        prev.map((req) =>
+          req.id === reqId ? { ...req, status: "cancelled" } : req
+        )
+      );
+      
+      alert("Request cancelled successfully!");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to cancel request");
+    } finally {
+      setCancellingReqId(null);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -185,7 +224,7 @@ export default function HostRequests(): React.ReactElement {
                         <div className="w-full md:w-48 h-48 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
                           <img
                             src={request.carPic}
-                            alt={`${request.carBrand} ${request.carModel}`}
+                            alt={`${request.carBrand.toUpperCase()} ${request.carModel.toUpperCase()}`}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -195,7 +234,7 @@ export default function HostRequests(): React.ReactElement {
                           <div className="flex items-start justify-between mb-4">
                             <div>
                               <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-                                {request.carBrand} {request.carModel}
+                                {request.carBrand.toUpperCase()} {request.carModel.toUpperCase()}
                               </h3>
                               <p className="text-sm text-gray-500 dark:text-gray-400">
                                 {request.carYear} {request.hasGPS && "• GPS Enabled"}
@@ -246,8 +285,12 @@ export default function HostRequests(): React.ReactElement {
                             </div>
                             
                             {request.status === "pending" && (
-                              <Button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold tracking-wide">
-                                Cancel Request
+                              <Button 
+                                onClick={() => handleCancelRequest(request.id)}
+                                disabled={cancellingReqId === request.id}
+                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {cancellingReqId === request.id ? "Cancelling..." : "Cancel Request"}
                               </Button>
                             )}
                           </div>

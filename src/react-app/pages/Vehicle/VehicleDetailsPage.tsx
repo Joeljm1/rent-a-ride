@@ -407,13 +407,13 @@ export default function VehicleDetailsPage() {
                       src={BaseURL === "https://car-rental.joeltest.workers.dev"
                         ? `https://pub-032f94942a2e444fa6cc5af38ce60e9e.r2.dev/${vehicle.pics[0].url}`
                         : "../assets/hono.svg"}
-                      alt={`${vehicle.brand} ${vehicle.model}`}
+                      alt={`${vehicle.brand.toUpperCase()} ${vehicle.model.toUpperCase()}`}
                       className="w-20 h-20 object-cover rounded-lg"
                     />
                   )}
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                      {vehicle?.brand} {vehicle?.model}
+                      {vehicle?.brand.toUpperCase()} {vehicle?.model.toUpperCase()}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       ₹{vehicle?.pricePerDay?.toLocaleString() || "0"}/day
@@ -535,7 +535,7 @@ export default function VehicleDetailsPage() {
                             Sending Request...
                           </span>
                         ) : (
-                          "Send Rental Request"
+                          <span className="text-gray-900 dark:text-gray-100">Send Rental Request</span>
                         )}
                       </Button>
                     </div>

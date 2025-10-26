@@ -66,7 +66,7 @@ export default function ManageVehicles(): React.ReactElement {
       fuelType: vehicle.fuelType,
       transmission: vehicle.transmission,
       seats: vehicle.seats,
-      status: vehicle.status === "requesting" ? "unavailable" : vehicle.status,
+      status: vehicle.status === "requesting" || vehicle.status === "approved" ? "unavailable" : vehicle.status,
     });
   };
 
