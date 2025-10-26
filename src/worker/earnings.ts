@@ -39,6 +39,7 @@ const earningsApp = new Hono<{
       // Get all completed bookings
       const completedBookings = await db
         .select({
+          // WARN: This will not work as request.rentedTo is stored as integers not ISO strings
           amount: sql<number>`${cars.pricePerDay} * (julianday(${requests.rentedTo}) - julianday(${requests.rentedFrom}))`,
           rentedFrom: requests.rentedFrom,
           status: requests.status,
@@ -48,8 +49,8 @@ const earningsApp = new Hono<{
         .where(
           and(
             sql`${cars.id} IN ${carIds}`,
-            sql`${requests.status} IN ('approved', 'completed')`
-          )
+            sql`${requests.status} IN ('approved', 'completed')`,
+          ),
         );
 
       // Calculate total earnings
@@ -76,7 +77,7 @@ const earningsApp = new Hono<{
 
       // Calculate average per booking
       const completedCount = completedBookings.filter(
-        (b) => b.status === "completed"
+        (b) => b.status === "completed",
       ).length;
       const averagePerBooking =
         completedCount > 0 ? totalEarnings / completedCount : 0;
@@ -136,8 +137,8 @@ const earningsApp = new Hono<{
         .where(
           and(
             sql`${cars.id} IN ${carIds}`,
-            sql`${requests.status} IN ('approved', 'completed', 'cancelled')`
-          )
+            sql`${requests.status} IN ('approved', 'completed', 'cancelled')`,
+          ),
         )
         .orderBy(desc(requests.requestedAt))
         .limit(50);
@@ -207,15 +208,12 @@ const earningsApp = new Hono<{
         .from(requests)
         .innerJoin(cars, eq(requests.carId, cars.id))
         .where(
-          and(
-            sql`${cars.id} IN ${carIds}`,
-            eq(requests.status, "approved")
-          )
+          and(sql`${cars.id} IN ${carIds}`, eq(requests.status, "approved")),
         );
 
       const pendingAmount = pendingBookings.reduce(
         (sum, booking) => sum + (booking.amount || 0),
-        0
+        0,
       );
 
       // Calculate next payout date (e.g., 5th of next month)

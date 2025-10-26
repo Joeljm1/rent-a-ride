@@ -7,6 +7,7 @@ import { hash } from "../lib/hash";
 import { and, desc, eq, gte, lt, SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import BaseURL from "../../BaseURL";
+import { BatchResponse } from "drizzle-orm/batch";
 
 const picBaseURL =
   BaseURL == "https://car-rental.joeltest.workers.dev"
@@ -308,22 +309,34 @@ const carReq = new Hono<{
           //   console.error(`Error updating db :${e}`);
           try {
             const carId = req[0].requests.carId;
-            console.log(`Approving request ${id} for car ${req[0].cars.id}`);
+            // console.log(`Approving request ${id} for car ${req[0].cars.id}`);
+            //
+            // // Update request status
+            // await db
+            //   .update(requests)
+            //   .set({ status: "approved" })
+            //   .where(eq(requests.id, id));
+            //
+            // console.log(`Request ${id} updated successfully`);
+            //
+            // // Update car status using the carId from the request
+            // await db
+            //   .update(cars)
+            //   .set({ status: "approved" })
+            //   .where(eq(cars.id, carId));
+            //
+            await db.batch([
+              db
+                .update(requests)
+                .set({ status: "approved" })
+                .where(eq(requests.id, id)),
 
-            // Update request status
-            await db
-              .update(requests)
-              .set({ status: "approved" })
-              .where(eq(requests.id, id));
-
-            console.log(`Request ${id} updated successfully`);
-
-            // Update car status using the carId from the request
-            await db
-              .update(cars)
-              .set({ status: "approved" })
-              .where(eq(cars.id, carId));
-
+              // Update car status using the carId from the request
+              db
+                .update(cars)
+                .set({ status: "approved" })
+                .where(eq(cars.id, carId)),
+            ]);
             console.log(`Car ${carId} updated successfully`);
 
             return c.json({ message: "Request Approved" }, 200);
@@ -428,7 +441,10 @@ const carReq = new Hono<{
         if (user == null) {
           return c.json({ message: "UnAuthorized" }, 401);
         }
-        const { carId: id, gpsId, gpsPass } = c.req.valid("json");
+        const { carId, gpsId, gpsPass } = c.req.valid("json");
+        const validGPSPass = gpsPass
+          ? gpsPass.length > 5 && gpsPass.length < 20
+          : false;
         const db = c.get("db");
         // let carID=await db
         //   .update(cars)
@@ -445,42 +461,98 @@ const carReq = new Hono<{
         if (gpsId && gpsPass && gpsPass.length > 0) {
           passHash = await hash(gpsPass);
         }
-        await db.transaction(async (tx) => {
-          carID = await tx
+        // await db.transaction(async (tx) => {
+        //   carID = await tx
+        //     .update(cars)
+        //     .set({ status: "renting" })
+        //     .where(
+        //       and(
+        //         eq(cars.id, carId),
+        //         eq(cars.userId, user.id),
+        //         eq(cars.status, "approved"),
+        //       ),
+        //     )
+        //     .returning({ id: cars.id, gps: cars.gps });
+        //   if (carID.length == 0) {
+        //     return c.json({ message: "Car Not Found or available" }, 404);
+        //   }
+        //   if (carID[0].gps && (gpsId == undefined || gpsPass == undefined)) {
+        //     throw new Error("GPS details required for this car");
+        //   }
+        //
+        //   if (carID[0].gps) {
+        //     await tx
+        //       .update(requests)
+        //       .set({ gpsId: gpsId, gpsPass: passHash })
+        //       .where(
+        //         and(eq(requests.carId, carId), eq(requests.status, "approved")),
+        //       );
+        //   }
+        // });
+
+        try {
+          const carResult = await db
             .update(cars)
             .set({ status: "renting" })
             .where(
               and(
-                eq(cars.id, id),
+                eq(cars.id, carId),
                 eq(cars.userId, user.id),
                 eq(cars.status, "approved"),
               ),
             )
             .returning({ id: cars.id, gps: cars.gps });
-          if (carID.length == 0) {
+
+          if (carResult.length === 0) {
             return c.json({ message: "Car Not Found or available" }, 404);
           }
-          if (carID[0].gps && (gpsId == undefined || gpsPass == undefined)) {
-            throw new Error("GPS details required for this car");
+
+          const car = carResult[0];
+          if (car.gps && (!gpsId || !validGPSPass)) {
+            // revert car status
+            await db
+              .update(cars)
+              .set({ status: "approved" })
+              .where(eq(cars.id, carId));
+            if (!validGPSPass) {
+              return c.json(
+                {
+                  error: "Password length must bebetween 5 and 20",
+                },
+                422,
+              );
+            }
+            return c.json(
+              {
+                error: "GPS details required for this car",
+              },
+              422,
+            );
           }
-          if (carID[0].gps) {
-            await tx
+
+          if (car.gps) {
+            await db
               .update(requests)
               .set({ gpsId: gpsId, gpsPass: passHash })
               .where(
-                and(eq(requests.carId, id), eq(requests.status, "approved")),
+                and(eq(requests.carId, carId), eq(requests.status, "approved")),
               );
           }
-        });
+
+          return c.json({ message: "Car rented successfully" });
+        } catch (err) {
+          console.error(err);
+          return c.json({ message: "Error during rental process" }, 500);
+        }
         return c.json({ message: "Car is sent for rent" }, 200);
       } catch (err) {
         console.error(err);
-        if (
-          err instanceof Error &&
-          err.message === "GPS details required for this car"
-        ) {
-          return c.json({ message: err.message }, 400);
-        }
+        // if (
+        //   err instanceof Error &&
+        //   err.message === "GPS details required for this car"
+        // ) {
+        //   return c.json({ message: err.message }, 400);
+        // }
         return c.json({ message: "Internal Server Error" }, 500);
       }
     },

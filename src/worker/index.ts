@@ -7,6 +7,8 @@ import carApp from "./vehicles";
 import carReq from "./rental.ts";
 import earningsApp from "./earnings";
 import aiChatApp from "./ai-chat";
+import GPSRouter from "./GPS";
+import { GPS } from "./GPSDurObj.ts";
 import rent from "./rental.ts";
 import type { CloudflareBindings } from "./env";
 import type { Variables } from "./types";
@@ -71,6 +73,7 @@ const app = new Hono<{ Bindings: CloudflareBindings; Variables: Variables }>()
   .route("/api/req", carReq)
   .route("/api/earnings", earningsApp)
   .route("/api/ai", aiChatApp)
+  .route("/api/gps", GPSRouter)
   .route("/api/rent", rent)
   .onError((err, c) => {
     console.error(`${err}`);
@@ -78,3 +81,4 @@ const app = new Hono<{ Bindings: CloudflareBindings; Variables: Variables }>()
   });
 export default app;
 export type AppType = typeof app;
+export { GPS };

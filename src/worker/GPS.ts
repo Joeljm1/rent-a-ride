@@ -81,10 +81,12 @@ const GPSRouter = new Hono<{
       }
     },
   )
+  // for websocket connection
   .get("/track/:id", async (c) => {
     const user = c.get("user");
     const gpsId = c.req.param("id");
     if (user === null) {
+      console.log("Track start");
       return c.json({ message: "UnAuthorized" }, 401);
     }
     const upgradeHeader = c.req.header("Upgrade");
@@ -97,8 +99,7 @@ const GPSRouter = new Hono<{
       );
     }
     const db = c.get("db");
-    // const a =
-    await db
+    const resp = await db
       .select({ req: requests.id })
       .from(requests)
       .innerJoin(cars, eq(requests.carId, cars.id))
@@ -107,9 +108,18 @@ const GPSRouter = new Hono<{
         and(
           eq(requests.gpsId, gpsId),
           or(eq(users.id, user.id), eq(requests.requestedBy, user.id)),
+          eq(cars.status, "renting"),
         ),
       );
-    //length check
+    //length check should be only 0 or 1 as gpsId is unique
+    if (resp.length == 0) {
+      return c.json(
+        {
+          error: "Not Found ",
+        },
+        404,
+      );
+    }
     const id = c.env.GPS.idFromName(gpsId);
     const stub = c.env.GPS.get(id);
     return stub.fetch(c.req.raw);

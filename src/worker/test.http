@@ -74,3 +74,33 @@ Cookie: better-auth.session_token=g1Nbz8KVs1M80zQ1TFoqWPEz4ASklc5c.1AqKDNP%2B%2B
   "rejectReason": "why not",
   "reqId": 2
 }
+
+
+### 
+
+POST localhost:5173/api/rent/sendCar HTTP/1.1
+Content-Type: application/json
+Cookie: _xsrf=2|e6ed46f5|c2c267da26a0bb4a717c65c17f1d48ea|1760104022; better-auth.session_token=uiiWVhybjaxqO6vidjP5Am0Aqw6myOdV.3UPRH5RB5VQDXEtqGhX1DmKc0j87FxZiSyf7WQo5n1k%3D
+
+{
+  "carId": 2,
+  "gpsId": "abc123",
+  "gpsPass": "secretPass"
+}
+
+
+### 
+
+GET WS ws://localhost:5173/api/gps/track/abc123 HTTP/1.1
+Cookie: _xsrf=2|e6ed46f5|c2c267da26a0bb4a717c65c17f1d48ea|1760104022; better-auth.session_token=uiiWVhybjaxqO6vidjP5Am0Aqw6myOdV.3UPRH5RB5VQDXEtqGhX1DmKc0j87FxZiSyf7WQo5n1k%3D
+
+
+### 
+
+GET WS wss://echo.websocket.org HTTP/1.1
+
+
+### 
+
+GET localhost:5173/api/cars HTTP/1.1
+Cookie: _xsrf=2|e6ed46f5|c2c267da26a0bb4a717c65c17f1d48ea|1760104022; better-auth.session_token=uiiWVhybjaxqO6vidjP5Am0Aqw6myOdV.3UPRH5RB5VQDXEtqGhX1DmKc0j87FxZiSyf7WQo5n1k%3D
