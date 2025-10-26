@@ -183,6 +183,42 @@ export default function HostApprovedRequests(): React.ReactElement {
     alert("GPS ID copied to clipboard!");
   };
 
+  const handleCompleteRental = async (reqId: number) => {
+    if (!confirm("Are you sure you want to complete this rental? The car will be marked as available.")) {
+      return;
+    }
+
+    try {
+      setProcessingReqId(reqId);
+
+      const response = await fetch(`${BaseURL}/api/rent/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          reqId: reqId,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json() as { error?: string; message?: string };
+        throw new Error(data.error || data.message || "Failed to complete rental");
+      }
+
+      const result = await response.json() as { message: string };
+      alert(result.message);
+
+      // Refresh the list to reflect changes
+      await fetchApprovedRequests();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to complete rental");
+    } finally {
+      setProcessingReqId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 dark:from-gray-900 dark:to-gray-800 py-8 px-6">
       <div className="max-w-6xl mx-auto">
@@ -408,6 +444,22 @@ export default function HostApprovedRequests(): React.ReactElement {
                                 >
                                   🗺️ Track Vehicle
                                 </Button>
+                                {request.carStatus === "renting" && (
+                                  <Button
+                                    onClick={() => handleCompleteRental(request.reqId)}
+                                    disabled={processingReqId === request.reqId}
+                                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {processingReqId === request.reqId ? (
+                                      <span className="flex items-center justify-center gap-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        Completing...
+                                      </span>
+                                    ) : (
+                                      "✅ Complete Rental"
+                                    )}
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>

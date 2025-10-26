@@ -766,6 +766,10 @@ const carReq = new Hono<{
             .set({ status: "available" })
             .where(eq(cars.id, carId)),
         ]);
+        
+        return c.json({ 
+          message: "Rental completed successfully. Car is now available." 
+        }, 200);
       } catch (err) {
         console.log(`Error: ${err}`);
         return c.json(
