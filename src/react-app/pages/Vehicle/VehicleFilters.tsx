@@ -29,6 +29,7 @@ export function VehicleFilters({ filters, setFilters }: VehicleFiltersProps) {
       try {
         const response = await fetch("/api/cars/brands");
         const brandsData = await response.json();
+        //@ts-ignore
         setBrands(brandsData);
       } catch (error) {
         console.error("Failed to fetch brands:", error);

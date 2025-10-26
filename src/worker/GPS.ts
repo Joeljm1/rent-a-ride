@@ -4,8 +4,8 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
 import { verify } from "../lib/hash";
-import { cars, requests } from "../db/schema";
-import { and, eq } from "drizzle-orm";
+import { cars, requests, users } from "../db/schema";
+import { and, eq, or } from "drizzle-orm";
 
 const GPSRouter = new Hono<{
   Bindings: CloudflareBindings;
@@ -83,7 +83,7 @@ const GPSRouter = new Hono<{
   )
   // for websocket connection
   .get("/track/:id", async (c) => {
-    // const user = c.get("user");
+    const user = c.get("user");
     const gpsId = c.req.param("id");
     if (user === null) {
       console.log("Track start");
@@ -100,14 +100,17 @@ const GPSRouter = new Hono<{
     }
     const db = c.get("db");
     const resp = await db
-      .select({ 
+      .select({
         req: requests.id,
         carOwnerId: cars.userId,
         renterId: requests.requestedBy,
       })
       .from(requests)
       .innerJoin(cars, eq(requests.carId, cars.id))
-      // .innerJoin(users, eq(cars.userId, user.id)) //Force user to be car owner
+      .innerJoin(
+        users,
+        or(eq(users.id, user.id), eq(requests.requestedBy, user.id)),
+      ) //Force user to be car owner
       .where(
         and(
           eq(requests.gpsId, gpsId),
@@ -124,7 +127,7 @@ const GPSRouter = new Hono<{
         404,
       );
     }
-    
+
     // Check if user is either the car owner or the renter
     const { carOwnerId, renterId } = resp[0];
     if (carOwnerId !== user.id && renterId !== user.id) {

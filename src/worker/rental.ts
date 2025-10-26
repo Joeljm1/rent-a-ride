@@ -3,11 +3,10 @@ import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
 import { carPics, cars, requests, users } from "../db/schema";
-import { hash, verify } from "../lib/hash";
+import { hash } from "../lib/hash";
 import { and, desc, eq, gte, lt, SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import BaseURL from "../../BaseURL";
-import { BatchResponse } from "drizzle-orm/batch";
 
 const picBaseURL =
   BaseURL == "https://car-rental.joeltest.workers.dev"
@@ -762,7 +761,10 @@ const carReq = new Hono<{
             .update(requests)
             .set({ status: "completed" })
             .where(eq(requests.id, reqId)),
-          db.update(cars).set({ status: "available" }).where(eq()),
+          db
+            .update(cars)
+            .set({ status: "available" })
+            .where(eq(cars.id, carId)),
         ]);
       } catch (err) {
         console.log(`Error: ${err}`);

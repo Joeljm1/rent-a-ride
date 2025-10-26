@@ -20,6 +20,7 @@ export default function VehiclesPage() {
     search: searchParams.get("search") || "",
   });
 
+  //@ts-ignore
   const handleRent = (vehicleId: number) => {
     // TODO: Implement rent functionality
     console.log(`Renting vehicle ${vehicleId}`);
