@@ -252,7 +252,7 @@ const carReq = new Hono<{
         // request id
         reqId: z.coerce.number().int(),
         action: z.enum(["approve", "reject"]), //??
-        reason: z.string().optional(),
+        rejectReason: z.string().optional(),
       }),
     ),
     async (c) => {
@@ -261,7 +261,7 @@ const carReq = new Hono<{
         if (user == null) {
           return c.json({ message: "UnAuthorized" }, 401);
         }
-        const { reqId: id, action, reason } = c.req.valid("json");
+        const { reqId: id, action, rejectReason: reason } = c.req.valid("json");
         const db = c.get("db");
         const req = await db
           .select()
@@ -280,38 +280,38 @@ const carReq = new Hono<{
         //   return c.json({ message: "Car not available" }, 400);
         // }
         if (action == "approve") {
+          // try {
+          // why tf is transaction not working
+          // D1 DOES NOT SUPPORT TRANSACTIONS !!!!!!!!!!!!!!!!!!!!!! 😡
+          //   await db.transaction(async (tx) => {
+          //     await tx
+          //       .update(requests)
+          //       .set({ status: "approved" })
+          //       .where(eq(requests.id, id));
+          //     await tx
+          //       .update(cars)
+          //       .set({ status: "approved" })
+          //       .where(eq(cars.id, req[0].cars.id));
+          //   });
+          // } catch (e) {
+          //   console.error(`Error updating db :${e}`);
           try {
-            // why tf is transaction not working
-            // D1 DOES NOT SUPPORT TRANSACTIONS !!!!!!!!!!!!!!!!!!!!!! 😡
-            await db.transaction(async (tx) => {
-              await tx
-                .update(requests)
-                .set({ status: "approved" })
-                .where(eq(requests.id, id));
-              await tx
-                .update(cars)
-                .set({ status: "approved" })
-                .where(eq(cars.id, req[0].cars.id));
-            });
-          } catch (e) {
-            console.error(`Error updating db :${e}`);
-            try {
-              await db
-                .update(requests)
-                .set({ status: "approved" })
-                .where(eq(requests.id, id));
-              await db
-                .update(cars)
-                .set({ status: "approved" })
-                .where(eq(cars.id, req[0].cars.id));
-            } catch (fallbackError) {
-              console.error(`Fallback update also failed: ${fallbackError}`);
-              return c.json(
-                { message: "Failed to approve request, try again" },
-                500,
-              );
-            }
+            await db
+              .update(requests)
+              .set({ status: "approved" })
+              .where(eq(requests.id, id));
+            await db
+              .update(cars)
+              .set({ status: "approved" })
+              .where(eq(cars.id, req[0].cars.id));
+          } catch (fallbackError) {
+            console.error(`Fallback update also failed: ${fallbackError}`);
+            return c.json(
+              { message: "Failed to approve request, try again" },
+              500,
+            );
           }
+          // }
           return c.json({ message: "Request Approved" }, 200);
         } else if (action == "reject") {
           //reject
