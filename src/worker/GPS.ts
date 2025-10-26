@@ -141,6 +141,19 @@ const GPSRouter = new Hono<{
     const id = c.env.GPS.idFromName(gpsId);
     const stub = c.env.GPS.get(id);
     return stub.fetch(c.req.raw);
-  });
+  })
+  .get(
+    "/history",
+    zValidator("json", z.object({ reqId: z.number() })),
+    async (c) => {
+      try {
+        const user = c.get("user");
+        const db = c.get("db");
+      } catch (err) {
+        console.error(`Error: ${err}`);
+        return c.json({ error: "Internal Server Error" }, 500);
+      }
+    },
+  );
 
 export default GPSRouter;
