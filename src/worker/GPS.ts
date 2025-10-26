@@ -81,46 +81,37 @@ const GPSRouter = new Hono<{
       }
     },
   )
-  .get(
-    "/track/:id",
-    zValidator(
-      "param",
-      z.object({
-        reqId: z.number(),
-      }),
-    ),
-    async (c) => {
-      const user = c.get("user");
-      const { reqId } = c.req.valid("json");
-      if (user === null) {
-        return c.json({ message: "UnAuthorized" }, 401);
-      }
-      const upgradeHeader = c.req.header("Upgrade");
-      if (upgradeHeader === undefined || upgradeHeader !== "websocket") {
-        return c.json(
-          {
-            error: "Expected Upgrade: websocket",
-          },
-          426,
-        );
-      }
-      const gpsId = c.req.param("id");
-      const db = c.get("db");
-      const a = await db
-        .select({ req: requests.id })
-        .from(requests)
-        .innerJoin(cars, eq(requests.carId, cars.id))
-        .innerJoin(users, eq(cars.userId, user.id))
-        .where(
-          and(
-            eq(requests.id, reqId),
-            or(eq(users.id, user.id), eq(requests.requestedBy, user.id)),
-          ),
-        );
-      const id = c.env.GPS.idFromName(gpsId);
-      const stub = c.env.GPS.get(id);
-      return stub.fetch(c.req.raw);
-    },
-  );
+  .get("/track/:id", async (c) => {
+    const user = c.get("user");
+    const gpsId = c.req.param("id");
+    if (user === null) {
+      return c.json({ message: "UnAuthorized" }, 401);
+    }
+    const upgradeHeader = c.req.header("Upgrade");
+    if (upgradeHeader === undefined || upgradeHeader !== "websocket") {
+      return c.json(
+        {
+          error: "Expected Upgrade: websocket",
+        },
+        426,
+      );
+    }
+    const db = c.get("db");
+    const a = await db
+      .select({ req: requests.id })
+      .from(requests)
+      .innerJoin(cars, eq(requests.carId, cars.id))
+      .innerJoin(users, eq(cars.userId, user.id))
+      .where(
+        and(
+          eq(requests.gpsId, gpsId),
+          or(eq(users.id, user.id), eq(requests.requestedBy, user.id)),
+        ),
+      );
+    //length check
+    const id = c.env.GPS.idFromName(gpsId);
+    const stub = c.env.GPS.get(id);
+    return stub.fetch(c.req.raw);
+  });
 
 export default GPSRouter;
