@@ -568,7 +568,7 @@ const carReq = new Hono<{
     zValidator(
       "json",
       z.object({
-        requestId: z.coerce.number().int(),
+        requestId: z.number(),
       }),
     ),
     async (c) => {
@@ -579,7 +579,6 @@ const carReq = new Hono<{
         }
         const db = c.get("db");
         const { requestId } = c.req.valid("json");
-        const rand = secureRandomAlphaNum();
         const req = await db
           .select({ carId: requests.carId })
           .from(requests)
@@ -594,6 +593,7 @@ const carReq = new Hono<{
         if (req.length == 0) {
           return c.json({ message: "Request Not Found" }, 404);
         }
+        const rand = secureRandomAlphaNum();
         const carId = req[0].carId;
         try {
           await db.batch([
@@ -617,7 +617,51 @@ const carReq = new Hono<{
 
         return c.json({
           gpsId: rand,
+          reqId: requestId,
         });
+      } catch (err) {
+        console.error(err);
+        return c.json({ message: "Internal Server Error" }, 500);
+      }
+    },
+  )
+  .post(
+    "/storePass",
+    zValidator(
+      "json",
+      z.object({
+        reqId: z.number(),
+        password: z.string().min(8).max(20),
+      }),
+    ),
+    async (c) => {
+      try {
+        const user = c.get("user");
+        if (user == null) {
+          return c.json({ message: "UnAuthorized" }, 401);
+        }
+        const db = c.get("db");
+        const { reqId, password } = c.req.valid("json");
+        const req = await db
+          .select({ id: requests.id })
+          .from(requests)
+          .innerJoin(cars, eq(requests.carId, cars.id))
+          .where(
+            and(
+              eq(requests.id, reqId),
+              eq(cars.userId, user.id),
+              eq(cars.status, "renting"),
+            ),
+          );
+        if (req.length == 0) {
+          return c.json({ error: "Request Not Found" }, 404);
+        }
+        const passHash = await hash(password);
+        await db
+          .update(requests)
+          .set({ gpsPass: passHash })
+          .where(eq(requests.id, reqId));
+        return c.json({ message: "successful" });
       } catch (err) {
         console.error(err);
         return c.json({ message: "Internal Server Error" }, 500);
