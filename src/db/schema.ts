@@ -142,7 +142,7 @@ export const requests = sqliteTable(
     // pending, approved, rejected,cancelled,completed
     status: text("status").default("pending"),
     completedAt: integer("completedAt", { mode: "timestamp" }),
-    gpsId: text("gpsId"),
+    gpsId: text("gpsId").unique(),
     gpsPass: text("gpsPass"),
   },
   (table) => [

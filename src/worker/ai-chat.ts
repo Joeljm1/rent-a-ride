@@ -6,7 +6,6 @@ import {
   WorkflowEntrypoint,
   WorkflowEvent,
   WorkflowStep,
-  //@ts-ignore
 } from "cloudflare:workers";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
@@ -467,6 +466,7 @@ export class VehicleEmbeddingWorkflow extends WorkflowEntrypoint<
           const embeddingPromises = vehicles.map(async (vehicle) => {
             const vehicleText = `${vehicle.brand} ${vehicle.model} ${vehicle.year}: ${vehicle.description || "No description"}. ${vehicle.fuelType} ${vehicle.transmission} with ${vehicle.seats} seats at $${vehicle.pricePerDay}/day`;
 
+            //@ts-ignore
             const result: any = await this.env.AI.run(
               "@cf/baai/bge-base-en-v1.5",
               {
@@ -503,11 +503,13 @@ export class VehicleEmbeddingWorkflow extends WorkflowEntrypoint<
       // Step 3: Upsert vectors to Vectorize
       const result = await step.do("upsert-vectors", async () => {
         try {
+          //@ts-ignore
           await this.env.VECTORIZE.upsert(embeddings);
 
           return {
             success: true,
             count: embeddings.length,
+            //@ts-ignore
             vehicleIds: embeddings.map((e) => e.id),
           };
         } catch (error) {

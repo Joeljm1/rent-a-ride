@@ -4,7 +4,12 @@ import { motion } from "motion/react";
 import BaseURL from "@/../../BaseURL.ts";
 import HostHeader from "./HostHeader";
 
-type RequestStatus = "pending" | "approved" | "rejected" | "cancelled" | "completed";
+type RequestStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "cancelled"
+  | "completed";
 
 interface RentalRequest {
   id: number;
@@ -27,10 +32,10 @@ export default function Dashboard() {
       try {
         const response = await fetch(
           `${BaseURL}/api/rent/allMyReq?page=1&pageSize=3&filter=all`,
-          { credentials: "include" }
+          { credentials: "include" },
         );
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as RentalRequest[];
           setRecentRequests(data);
         }
       } catch (err) {
@@ -121,7 +126,7 @@ export default function Dashboard() {
                         </h4>
                         <span
                           className={`inline-block w-2 h-2 rounded-full ${getStatusColor(
-                            request.status
+                            request.status,
                           )}`}
                           title={request.status}
                         ></span>
@@ -141,10 +146,10 @@ export default function Dashboard() {
                         request.status === "pending"
                           ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
                           : request.status === "approved"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                          : request.status === "rejected"
-                          ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                            : request.status === "rejected"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
                       }`}
                     >
                       {request.status}
@@ -189,3 +194,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

@@ -71,6 +71,6 @@ Cookie: better-auth.session_token=g1Nbz8KVs1M80zQ1TFoqWPEz4ASklc5c.1AqKDNP%2B%2B
 
 {
   "action": "reject",
-  "reason": "why not",
+  "rejectReason": "why not",
   "reqId": 2
 }

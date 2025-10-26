@@ -97,7 +97,8 @@ const GPSRouter = new Hono<{
       );
     }
     const db = c.get("db");
-    const a = await db
+    // const a =
+    await db
       .select({ req: requests.id })
       .from(requests)
       .innerJoin(cars, eq(requests.carId, cars.id))

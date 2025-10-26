@@ -3,7 +3,7 @@ import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
 import { carPics, cars, requests, users } from "../db/schema";
-import { hash, verify } from "../lib/hash";
+import { hash } from "../lib/hash";
 import { and, desc, eq, gte, lt, SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import BaseURL from "../../BaseURL";
@@ -309,15 +309,15 @@ const carReq = new Hono<{
           try {
             const carId = req[0].requests.carId;
             console.log(`Approving request ${id} for car ${req[0].cars.id}`);
-            
+
             // Update request status
             await db
               .update(requests)
               .set({ status: "approved" })
               .where(eq(requests.id, id));
-            
+
             console.log(`Request ${id} updated successfully`);
-            
+
             // Update car status using the carId from the request
             await db
               .update(cars)
@@ -325,7 +325,7 @@ const carReq = new Hono<{
               .where(eq(cars.id, carId));
 
             console.log(`Car ${carId} updated successfully`);
-            
+
             return c.json({ message: "Request Approved" }, 200);
           } catch (error) {
             console.error(`Error approving request: ${error}`);
@@ -375,18 +375,18 @@ const carReq = new Hono<{
         }
         const { reqId: id } = c.req.valid("json");
         const db = c.get("db");
-        
+
         // Verify user owns this request and it's in pending status
         const req = await db
           .select()
           .from(requests)
           .where(and(eq(requests.id, id), eq(requests.requestedBy, user.id)))
           .limit(1);
-        
+
         if (req.length == 0) {
           return c.json({ message: "Request Not Found" }, 404);
         }
-        
+
         if (req[0].status != "pending") {
           return c.json({ message: "Can only cancel pending requests" }, 400);
         }
@@ -396,7 +396,7 @@ const carReq = new Hono<{
             .update(requests)
             .set({ status: "cancelled" })
             .where(eq(requests.id, id));
-          
+
           return c.json({ message: "Request Cancelled Successfully" }, 200);
         } catch (e) {
           console.error(`Error cancelling request: ${e}`);

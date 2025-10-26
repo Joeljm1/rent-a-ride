@@ -1,3 +1,7 @@
+/// <reference types="@cloudflare/workers-types" />
+
+import { GPS } from "./GPSDurObj";
+
 export interface CloudflareBindings {
   DB: D1Database;
   KV: KVNamespace;
@@ -7,7 +11,7 @@ export interface CloudflareBindings {
   AI: Ai;
   VECTORIZE: Vectorize;
   VEHICLE_EMBEDDING_WORKFLOW: Workflow;
-  GPS:DurableObjectNamespace<GPS>;
+  GPS: DurableObjectNamespace<GPS>;
 }
 
 declare global {

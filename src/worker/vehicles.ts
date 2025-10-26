@@ -11,7 +11,7 @@ import type {
 import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
-import { cars, carPics, requests, users } from "../db/schema";
+import { cars, carPics, users } from "../db/schema";
 import {
   and,
   eq,

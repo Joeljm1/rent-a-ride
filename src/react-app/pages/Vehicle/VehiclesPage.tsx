@@ -73,7 +73,7 @@ export default function VehiclesPage() {
 
       <VehicleGrid
         vehicles={cars.data}
-        onRent={handleRent}
+        // onRent={handleRent}
         currentPage={currentPage}
         totalPages={cars.metaData?.totalPage || 1}
         onPageChange={handlePageChange}

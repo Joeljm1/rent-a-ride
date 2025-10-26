@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `requests_gpsId_unique` ON `requests` (`gpsId`);

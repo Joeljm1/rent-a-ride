@@ -1,8 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
+
 export class GPS extends DurableObject {
   lat: number | null;
   long: number | null;
   sql: SqlStorage;
+  
   constructor(ctx: DurableObjectState, env: unknown) {
     super(ctx, env);
     // need to change to get from storage
