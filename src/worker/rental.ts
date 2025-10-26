@@ -3,7 +3,7 @@ import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
 import { carPics, cars, requests, users } from "../db/schema";
-import { hash } from "../lib/hash";
+import { hash, verify } from "../lib/hash";
 import { and, desc, eq, gte, lt, SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import BaseURL from "../../BaseURL";
@@ -153,6 +153,7 @@ const carReq = new Hono<{
           carPic: r.carPics?.url ? picBaseURL + r.carPics.url : picBaseURL,
           price: r.cars.pricePerDay,
           hasGPS: r.cars.gps,
+          gpsId: r.requests.gpsId,
         }));
         return c.json(resp, 200);
       } catch (err) {
@@ -256,6 +257,62 @@ const carReq = new Hono<{
         requesterName: elem.requester.name,
         requesterEmail: elem.requester.email,
         requesterImage: elem.requester.image,
+      }));
+      return c.json(resp);
+    } catch (err) {
+      console.error(err);
+      return c.json({ message: "Internal Server Error" }, 500);
+    }
+  })
+  // approved requests to my cars
+  .get("/approvedRequests", async (c) => {
+    try {
+      const user = c.get("user");
+      if (user == null) {
+        return c.json({ message: "UnAuthorized" }, 401);
+      }
+      const db = c.get("db");
+      const req = await db
+        .select({
+          request: requests,
+          car: cars,
+          carPic: carPics,
+          requester: users,
+        })
+        .from(requests)
+        .innerJoin(cars, eq(requests.carId, cars.id))
+        .leftJoin(
+          carPics,
+          and(eq(cars.id, carPics.carId), eq(carPics.isCover, true)),
+        )
+        .innerJoin(users, eq(requests.requestedBy, users.id))
+        .where(
+          and(
+            eq(cars.userId, user.id),
+            eq(requests.status, "approved"),
+            gte(requests.rentedFrom, new Date()),
+          ),
+        )
+        .orderBy(desc(requests.requestedAt));
+
+      const resp = req.map((elem) => ({
+        reqId: elem.request.id,
+        requestedAt: elem.request.requestedAt,
+        rentedFrom: elem.request.rentedFrom,
+        rentedTo: elem.request.rentedTo,
+        reqMessage: elem.request.reqMessage,
+        status: "approved",
+        carId: elem.car.id,
+        brand: elem.car.brand,
+        model: elem.car.model,
+        year: elem.car.year,
+        pic: elem.carPic?.url ? picBaseURL + elem.carPic.url : picBaseURL,
+        pricePerDay: elem.car.pricePerDay,
+        requesterName: elem.requester.name,
+        requesterEmail: elem.requester.email,
+        requesterImage: elem.requester.image,
+        gpsId: elem.request.gpsId,
+        carStatus: elem.car.status,
       }));
       return c.json(resp);
     } catch (err) {
