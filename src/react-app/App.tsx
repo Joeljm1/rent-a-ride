@@ -18,6 +18,8 @@ import HostBookings from "./pages/Host/HostBookings.tsx";
 import HostEarnings from "./pages/Host/HostEarnings.tsx";
 import HostProfile from "./pages/Host/HostProfile.tsx";
 import HostPendingRequests from "./pages/Host/HostPendingRequests.tsx";
+import HostApprovedRequests from "./pages/Host/HostApprovedRequests.tsx";
+import TrackVehicle from "./pages/Host/TrackVehicle.tsx";
 import AIChat from "./pages/AIChat.tsx";
 
 export const router = createBrowserRouter([
@@ -133,7 +135,15 @@ export const router = createBrowserRouter([
           {
             path: "pending-requests",
             element: <HostPendingRequests />, 
-          }
+          },
+          {
+            path: "approved-requests",
+            element: <HostApprovedRequests />, 
+          },
+          {
+            path: "track/:gpsId",
+            element: <TrackVehicle />,
+          },
         ],
       },
       { path: "*", element: <NotFound /> },
