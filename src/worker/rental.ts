@@ -667,6 +667,56 @@ const carReq = new Hono<{
         return c.json({ message: "Internal Server Error" }, 500);
       }
     },
+  )
+  .post(
+    "/complete",
+    zValidator(
+      "json",
+      z.object({
+        reqId: z.number(),
+      }),
+    ),
+    async (c) => {
+      try {
+        const user = c.get("user");
+        if (user == null) {
+          return c.json({ message: "UnAuthorized" }, 401);
+        }
+        const db = c.get("db");
+        const { reqId } = c.req.valid("json");
+        const req = await db
+          .select({ reqId: requests.id, carId: cars.id })
+          .from(requests)
+          .innerJoin(cars, eq(cars.id, requests.carId))
+          .where(
+            and(
+              eq(requests.id, reqId),
+              eq(cars.userId, user.id),
+              eq(cars.status, "renting"),
+            ),
+          );
+        if (req.length == 0) {
+          return c.json({ error: "Request Not Found" }, 404);
+        }
+        const carId = req[0].carId;
+        //rollback???
+        await db.batch([
+          db
+            .update(requests)
+            .set({ status: "completed" })
+            .where(eq(requests.id, reqId)),
+          db.update(cars).set({ status: "available" }).where(eq()),
+        ]);
+      } catch (err) {
+        console.log(`Error: ${err}`);
+        return c.json(
+          {
+            error: "Internal Server Error",
+          },
+          500,
+        );
+      }
+    },
   );
 export default carReq;
 
