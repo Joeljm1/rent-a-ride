@@ -548,7 +548,7 @@ const carApp = new Hono<{
         const carRowsProm = db
           .select()
           .from(cars)
-          .innerJoin(carPics, eq(cars.id, carPics.carId))
+          .leftJoin(carPics, eq(cars.id, carPics.carId))
           // .leftJoin(rental, eq(cars.id, rental.carId))
           .where(and(...filters))
           .orderBy(sort)
@@ -581,15 +581,17 @@ const carApp = new Hono<{
                 | "unavailable"
                 | "renting"
                 | "requesting",
-              pics: [
-                {
-                  id: pic.id,
-                  url: pic.url,
-                  isCover: pic.isCover,
-                },
-              ],
+              pics: pic
+                ? [
+                    {
+                      id: pic.id,
+                      url: pic.url,
+                      isCover: pic.isCover,
+                    },
+                  ]
+                : [],
             };
-          } else {
+          } else if (pic) {
             carRec[car.id].pics.push({
               id: pic.id,
               url: pic.url,
