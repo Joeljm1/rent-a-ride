@@ -3,6 +3,7 @@ import { DurableObject } from "cloudflare:workers";
 export class GPS extends DurableObject {
   lat: number | null;
   long: number | null;
+  time: Date | null;
   sql: SqlStorage;
 
   constructor(ctx: DurableObjectState, env: unknown) {
@@ -10,6 +11,7 @@ export class GPS extends DurableObject {
     // need to change to get from storage
     this.lat = null;
     this.long = null;
+    this.time = null;
     this.sql = ctx.storage.sql;
     this.sql.exec(`
       CREATE TABLE IF NOT EXISTS GPS(
@@ -24,14 +26,13 @@ export class GPS extends DurableObject {
   async fetch(request: Request): Promise<Response> {
     // if i need to check path later use below line
     // const url = new URL(request.url);
-    console.log("Start");
     const webSockPair = new WebSocketPair();
     const [client, server] = Object.values(webSockPair);
 
     this.ctx.acceptWebSocket(server);
     if (!this.lat || !this.long) {
       const cursor = this.sql.exec(
-        "SELECT lat,lon from GPS ORDER BY time DESC LIMIT 1",
+        "SELECT lat,lon,time from GPS ORDER BY time DESC LIMIT 1",
       );
       if (cursor.rowsRead > 0) {
         const next = cursor.next();
@@ -39,64 +40,43 @@ export class GPS extends DurableObject {
           // should always be true but need type system to obey 😭
           const lat = next.value["lat"]?.valueOf();
           const long = next.value["lon"]?.valueOf();
-          if (typeof lat == "number" && typeof long == "number") {
+          const time = next.value["time"]?.valueOf();
+          if (
+            typeof lat == "number" &&
+            typeof long == "number" &&
+            typeof time == "number"
+          ) {
             this.lat = lat;
             this.long = long;
+            this.time = new Date(time * 1000);
           }
         }
       }
     }
 
-    server.send(`Lat:${this.lat} Long:${this.long}`);
+    server.send(
+      `Lat:${this.lat} Long:${this.long} Time:${this.time ? Math.floor(this.time.getTime() / 1000) : null}`,
+    );
     return new Response(null, {
       status: 101,
       webSocket: client,
     });
-
-    // } else if (request.method === "POST") {
-    //   const { lat, lon } = (await request.json()) as {
-    //     lat: number | undefined;
-    //     lon: number | undefined;
-    //   };
-    //   if (typeof lat == "number" && typeof lon == "number") {
-    //     const wsArr = this.ctx.getWebSockets();
-    //     this.lat = lat;
-    //     this.long = lon;
-    //     wsArr.forEach((ws) => {
-    //       const sendMsg = `Lat:${lat} Long:${lon}` as const;
-    //       ws.send(sendMsg);
-    //     });
-    //     this.sql.exec("INSERT INTO GPS(lat,lon) VALUES (?,?)", [
-    //       this.lat,
-    //       this.long,
-    //     ]);
-    //
-    //     return new Response(JSON.stringify({ message: "Success" }), {
-    //       status: 200,
-    //     });
-    // }
-    // else {
-    //        return new Response(
-    //          JSON.stringify({ error: "Invalid Latitude or Longitude" }),
-    //          {
-    //            status: 422,
-    //          },
-    //        );
-    //      }
   }
   async updateCord(lat: number, lon: number) {
     try {
       const wsArr = this.ctx.getWebSockets();
       this.lat = lat;
       this.long = lon;
+      this.time = new Date();
       wsArr.forEach((ws) => {
-        const sendMsg = `Lat:${lat} Long:${lon}` as const;
+        const sendMsg =
+          `Lat:${lat} Long:${lon} Time:${this.time ? Math.floor(this.time.getTime() / 1000) : null}` as const;
         ws.send(sendMsg);
       });
-      this.sql.exec('INSERT INTO GPS(lat,"lon") VALUES (?,?)', [
-        this.lat,
-        this.long,
-      ]);
+      this.sql.exec(
+        "INSERT INTO GPS(lat,lon) VALUES (?,?);",
+        ...[this.lat, this.long],
+      );
       return "OK";
     } catch (err) {
       console.log(err);
@@ -104,5 +84,38 @@ export class GPS extends DurableObject {
     }
   }
   // do this later
-  async getHistory() {}
+  async getHistory() {
+    const sql = `SELECT lat, lon, time
+	FROM (
+	  SELECT lat, lon, time,
+	  ROW_NUMBER() OVER (ORDER BY time ASC) AS rn
+	  FROM GPS
+	)
+	WHERE rn % 10 = 0;`;
+
+    interface LatLong {
+      lat: number;
+      long: number;
+      time: number;
+    }
+
+    const cursor = this.sql.exec(sql);
+    const loc: LatLong[] = [];
+    if (cursor.rowsRead > 0) {
+      const next = cursor.next();
+      if (!next.done) {
+        // should always be true but need type system to obey 😭
+        const lat = next.value["lat"]?.valueOf();
+        const long = next.value["lon"]?.valueOf();
+        const time = next.value["time"]?.valueOf();
+        if (
+          typeof lat == "number" &&
+          typeof long == "number" &&
+          typeof time == "number"
+        ) {
+          loc.push({ lat: lat, long: long, time: time });
+        }
+      }
+    }
+  }
 }

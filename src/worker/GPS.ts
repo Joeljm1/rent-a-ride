@@ -83,7 +83,7 @@ const GPSRouter = new Hono<{
   )
   // for websocket connection
   .get("/track/:id", async (c) => {
-    const user = c.get("user");
+    // const user = c.get("user");
     const gpsId = c.req.param("id");
     if (user === null) {
       console.log("Track start");
