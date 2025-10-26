@@ -332,7 +332,7 @@ const carReq = new Hono<{
             );
           }
           // }
-          return c.json({ message: "Request Approved" }, 200);
+          // return c.json({ message: "Request Approved" }, 200);
         } else if (action == "reject") {
           //reject
           try {

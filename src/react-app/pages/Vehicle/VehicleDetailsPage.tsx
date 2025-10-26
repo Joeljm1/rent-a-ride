@@ -270,7 +270,7 @@ export default function VehicleDetailsPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-3xl">
-                  {vehicle.brand} {vehicle.model}
+                  {vehicle.brand.toUpperCase()} {vehicle.model.toUpperCase()}
                 </CardTitle>
                 <Badge variant="outline" className="text-lg px-3 py-1">
                   {vehicle.year}
@@ -286,7 +286,7 @@ export default function VehicleDetailsPage() {
                   <span className="text-2xl">⛽</span>
                   <div>
                     <p className="text-sm text-muted-foreground">Fuel Type</p>
-                    <p className="font-semibold">{vehicle.fuelType}</p>
+                    <p className="font-semibold">{vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1)}</p>
                   </div>
                 </div>
                 
@@ -294,7 +294,7 @@ export default function VehicleDetailsPage() {
                   <span className="text-2xl">⚙️</span>
                   <div>
                     <p className="text-sm text-muted-foreground">Transmission</p>
-                    <p className="font-semibold">{vehicle.transmission}</p>
+                    <p className="font-semibold">{vehicle.transmission.charAt(0).toUpperCase() + vehicle.transmission.slice(1)}</p>
                   </div>
                 </div>
                 
@@ -302,7 +302,7 @@ export default function VehicleDetailsPage() {
                   <span className="text-2xl">👥</span>
                   <div>
                     <p className="text-sm text-muted-foreground">Seating</p>
-                    <p className="font-semibold">{vehicle.seats} seats</p>
+                    <p className="font-semibold">{vehicle.seats} Seats</p>
                   </div>
                 </div>
                 
@@ -351,7 +351,7 @@ export default function VehicleDetailsPage() {
                 className="flex-1"
                 size="lg"
               >
-                Rent This Vehicle
+                Rent Vehicle
               </Button>
               <Button
                 variant="outline"
