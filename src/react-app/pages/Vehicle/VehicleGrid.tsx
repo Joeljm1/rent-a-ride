@@ -5,7 +5,6 @@ import type { AvailableCars } from "../../../worker/types";
 interface VehicleGridProps {
   vehicles: AvailableCars[];
   loading?: boolean;
-  onRent?: (vehicleId: number) => void;
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
@@ -14,7 +13,6 @@ interface VehicleGridProps {
 export function VehicleGrid({ 
   vehicles, 
   loading = false, 
-  onRent,
   currentPage = 1,
   totalPages = 1,
   onPageChange
@@ -71,7 +69,6 @@ export function VehicleGrid({
           <VehicleCard
             key={vehicle.id}
             vehicle={vehicle}
-            onRent={onRent}
           />
         ))}
       </div>
