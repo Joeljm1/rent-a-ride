@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 URL="http://localhost:5173/api/gps/updateLoc"
-GPS_ID="GVfF9vgMFS"
+GPS_ID="LrmEwYyYb2"
 GPS_PASS="12345678"
 
 # Array of [lat, lon] pairs

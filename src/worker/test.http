@@ -103,3 +103,9 @@ Cookie: _xsrf=2|e6ed46f5|c2c267da26a0bb4a717c65c17f1d48ea|1760104022; better-aut
   "password": "12345678",
   "reqId": 1
 }
+
+
+### 
+
+GET localhost:5173/api/gps/history/4 HTTP/1.1
+Cookie: _hello_key=SFMyNTY.g3QAAAABbQAAAAtfY3NyZl90b2tlbm0AAAAYd3FyT1BGQ2NRMHNkVVZ3ZFdkM0F4ZGxW.cESFqgP-wXJoRuIYb8opnidtlLhNxqizskz2cvF3edc; better-auth.session_token=9BvieUPpmfaC2hHLERJgQ2r1kW5HjHZf.ZOHJPgcDE%2FtLQjW3bhQvkQ4FdsrInQcDSEycUiDBj%2B0%3D

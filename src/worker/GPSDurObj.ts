@@ -85,14 +85,15 @@ export class GPS extends DurableObject {
   }
   // do this later
   async getHistory() {
-    const sql = `SELECT lat, lon, time
-	FROM (
-	  SELECT lat, lon, time,
-	  ROW_NUMBER() OVER (ORDER BY time ASC) AS rn
-	  FROM GPS
-	)
-	WHERE rn % 10 = 0;`;
+    //    const sql = `SELECT lat, lon, time
+    // FROM (
+    //   SELECT lat, lon, time,
+    //   ROW_NUMBER() OVER (ORDER BY time ASC) AS rn
+    //   FROM GPS
+    // )
+    // WHERE rn % 10 = 0;`;
 
+    const sql = `SELECT lat, lon, time FROM GPS;`;
     interface LatLong {
       lat: number;
       long: number;
@@ -102,8 +103,11 @@ export class GPS extends DurableObject {
     const cursor = this.sql.exec(sql);
     const loc: LatLong[] = [];
     if (cursor.rowsRead > 0) {
-      const next = cursor.next();
-      if (!next.done) {
+      while (true) {
+        const next = cursor.next();
+        if (next.done) {
+          return loc;
+        }
         // should always be true but need type system to obey 😭
         const lat = next.value["lat"]?.valueOf();
         const long = next.value["lon"]?.valueOf();
@@ -114,7 +118,9 @@ export class GPS extends DurableObject {
           typeof time == "number"
         ) {
           loc.push({ lat: lat, long: long, time: time });
+          console.log(loc);
         }
+        /////[]
       }
     }
   }

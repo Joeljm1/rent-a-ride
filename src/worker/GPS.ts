@@ -143,12 +143,40 @@ const GPSRouter = new Hono<{
     return stub.fetch(c.req.raw);
   })
   .get(
-    "/history",
-    zValidator("json", z.object({ reqId: z.number() })),
+    "/history/:reqId",
+    zValidator("param",z.object({reqId:z.coerce.number()})),
     async (c) => {
+      console.log("Reached")
       try {
         const user = c.get("user");
         const db = c.get("db");
+        const {reqId}  = c.req.valid("param")
+        if (user === null) {
+          return c.json({ error: "UnAuthorized" }, 401);
+        }
+        const resp = await db
+          .select({
+            carOwnerId: cars.userId,
+            renterId: requests.requestedBy,
+            gpsId: requests.gpsId,
+          })
+          .from(requests)
+          .innerJoin(cars, eq(requests.carId, cars.id))
+          .where(eq(requests.id, reqId));
+        if (resp.length === 0) {
+          return c.json({ error: "Request Not Found" }, 404);
+        }
+        const { carOwnerId, renterId, gpsId } = resp[0];
+        if (carOwnerId !== user.id && renterId !== user.id) {
+          return c.json(
+            { error: "UnAuthorized - You must be the car owner or renter" },
+            401,
+          );
+        }
+        const id = c.env.GPS.idFromName(gpsId);
+        const stub = c.env.GPS.get(id);
+        const history = await stub.getHistory();
+        return c.json({ history }, 200);
       } catch (err) {
         console.error(`Error: ${err}`);
         return c.json({ error: "Internal Server Error" }, 500);
