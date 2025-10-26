@@ -42,7 +42,7 @@ export default function HostPendingRequests(): React.ReactElement {
         throw new Error("Failed to fetch pending requests");
       }
 
-      const data = await response.json();
+      const data = await response.json() as PendingRequest[];
       setRequests(data);
       setError(null);
     } catch (err) {
@@ -72,7 +72,7 @@ export default function HostPendingRequests(): React.ReactElement {
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { message?: string };
         throw new Error(data.message || "Failed to approve request");
       }
 
@@ -104,7 +104,7 @@ export default function HostPendingRequests(): React.ReactElement {
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { message?: string };
         throw new Error(data.message || "Failed to reject request");
       }
 

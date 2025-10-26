@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
+import { Link } from "react-router";
 import BaseURL from "@/../../BaseURL.ts";
 
 type RequestStatus = "all" | "pending" | "approved" | "rejected" | "cancelled" | "completed" | "expired";
@@ -19,6 +20,7 @@ interface RentalRequest {
   carPic: string;
   price: number;
   hasGPS: boolean;
+  gpsId: string | null;
 }
 
 export default function HostRequests(): React.ReactElement {
@@ -44,7 +46,7 @@ export default function HostRequests(): React.ReactElement {
         throw new Error("Failed to fetch requests");
       }
 
-      const data = await response.json();
+      const data = await response.json() as RentalRequest[];
       setRequests(data);
       setError(null);
     } catch (err) {
@@ -77,7 +79,7 @@ export default function HostRequests(): React.ReactElement {
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { message?: string };
         throw new Error(data.message || "Failed to cancel request");
       }
 
@@ -271,6 +273,18 @@ export default function HostRequests(): React.ReactElement {
                             </div>
                           </div>
 
+                          {/* GPS ID Display */}
+                          {request.gpsId && (request.status === "approved" || request.status === "completed") && (
+                            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-600">
+                              <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                                🗺️ GPS Tracking ID:
+                              </p>
+                              <code className="block px-3 py-2 bg-white dark:bg-gray-800 rounded text-lg font-mono font-bold text-gray-900 dark:text-white">
+                                {request.gpsId}
+                              </code>
+                            </div>
+                          )}
+
                           <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                             <div>
                               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -284,15 +298,26 @@ export default function HostRequests(): React.ReactElement {
                               </p>
                             </div>
                             
-                            {request.status === "pending" && (
-                              <Button 
-                                onClick={() => handleCancelRequest(request.id)}
-                                disabled={cancellingReqId === request.id}
-                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {cancellingReqId === request.id ? "Cancelling..." : "Cancel Request"}
-                              </Button>
-                            )}
+                            <div className="flex gap-3">
+                              {request.status === "pending" && (
+                                <Button 
+                                  onClick={() => handleCancelRequest(request.id)}
+                                  disabled={cancellingReqId === request.id}
+                                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {cancellingReqId === request.id ? "Cancelling..." : "Cancel Request"}
+                                </Button>
+                              )}
+                              
+                              {request.gpsId && (request.status === "approved" || request.status === "completed") && (
+                                <Link
+                                  to={`/host/track/${request.gpsId}`}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold tracking-wide inline-flex items-center gap-2"
+                                >
+                                  📍 Track Vehicle
+                                </Link>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

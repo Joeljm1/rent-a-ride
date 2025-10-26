@@ -109,7 +109,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as { message?: string };
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to create rental request");
