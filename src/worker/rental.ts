@@ -14,6 +14,14 @@ const picBaseURL =
     ? `https://pub-032f94942a2e444fa6cc5af38ce60e9e.r2.dev/`
     : "../assets/hono.svg";
 
+function secureRandomAlphaNum(len = 10) {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const array = new Uint8Array(len);
+  crypto.getRandomValues(array);
+  return Array.from(array, (x) => chars[x % chars.length]).join("");
+}
+
 const carReq = new Hono<{
   Bindings: CloudflareBindings;
   Variables: Variables;
@@ -424,15 +432,143 @@ const carReq = new Hono<{
       }
     },
   )
+  // .post(
+  //   "/sendcar",
+  //   zvalidator(
+  //     "json",
+  //     z.object({
+  //       // car id
+  //       requestid: z.number(),
+  //     }),
+  //   ),
+  //   async (c) => {
+  //     try {
+  //       const user = c.get("user");
+  //       if (user == null) {
+  //         return c.json({ message: "unauthorized" }, 401);
+  //       }
+  //       const { carid, gpsid, gpspass } = c.req.valid("json");
+  //       const validgpspass = gpspass
+  //         ? gpspass.length > 5 && gpspass.length < 20
+  //         : false;
+  //       const db = c.get("db");
+  //       // let carid=await db
+  //       //   .update(cars)
+  //       //   .set({ status: "renting" })
+  //       //   .where(
+  //       //     and(
+  //       //       eq(cars.id, id),
+  //       //       eq(cars.userid, user.id),
+  //       //       eq(cars.status, "approved"),
+  //       //     ),
+  //       //   ).returning({ id: cars.id });
+  //       let carid: { id: number; gps: boolean }[] = [];
+  //       let passhash: string | undefined = undefined;
+  //       if (gpsid && gpspass && gpspass.length > 0) {
+  //         passhash = await hash(gpspass);
+  //       }
+  //       // await db.transaction(async (tx) => {
+  //       //   carid = await tx
+  //       //     .update(cars)
+  //       //     .set({ status: "renting" })
+  //       //     .where(
+  //       //       and(
+  //       //         eq(cars.id, carid),
+  //       //         eq(cars.userid, user.id),
+  //       //         eq(cars.status, "approved"),
+  //       //       ),
+  //       //     )
+  //       //     .returning({ id: cars.id, gps: cars.gps });
+  //       //   if (carid.length == 0) {
+  //       //     return c.json({ message: "car not found or available" }, 404);
+  //       //   }
+  //       //   if (carid[0].gps && (gpsid == undefined || gpspass == undefined)) {
+  //       //     throw new error("gps details required for this car");
+  //       //   }
+  //       //
+  //       //   if (carid[0].gps) {
+  //       //     await tx
+  //       //       .update(requests)
+  //       //       .set({ gpsid: gpsid, gpspass: passhash })
+  //       //       .where(
+  //       //         and(eq(requests.carid, carid), eq(requests.status, "approved")),
+  //       //       );
+  //       //   }
+  //       // });
+
+  //       try {
+  //         const carresult = await db
+  //           .update(cars)
+  //           .set({ status: "renting" })
+  //           .where(
+  //             and(
+  //               eq(cars.id, carid),
+  //               eq(cars.userid, user.id),
+  //               eq(cars.status, "approved"),
+  //             ),
+  //           )
+  //           .returning({ id: cars.id, gps: cars.gps });
+
+  //         if (carresult.length === 0) {
+  //           return c.json({ message: "car not found or available" }, 404);
+  //         }
+
+  //         const car = carresult[0];
+  //         if (car.gps && (!gpsid || !validgpspass)) {
+  //           // revert car status
+  //           await db
+  //             .update(cars)
+  //             .set({ status: "approved" })
+  //             .where(eq(cars.id, carid));
+  //           if (!validgpspass) {
+  //             return c.json(
+  //               {
+  //                 error: "password length must bebetween 5 and 20",
+  //               },
+  //               422,
+  //             );
+  //           }
+  //           return c.json(
+  //             {
+  //               error: "gps details required for this car",
+  //             },
+  //             422,
+  //           );
+  //         }
+
+  //         if (car.gps) {
+  //           await db
+  //             .update(requests)
+  //             .set({ gpsid: gpsid, gpspass: passhash })
+  //             .where(
+  //               and(eq(requests.carid, carid), eq(requests.status, "approved")),
+  //             );
+  //         }
+
+  //         return c.json({ message: "car rented successfully" });
+  //       } catch (err) {
+  //         console.error(err);
+  //         return c.json({ message: "error during rental process" }, 500);
+  //       }
+  //       return c.json({ message: "car is sent for rent" }, 200);
+  //     } catch (err) {
+  //       console.error(err);
+  //       // if (
+  //       //   err instanceof error &&
+  //       //   err.message === "gps details required for this car"
+  //       // ) {
+  //       //   return c.json({ message: err.message }, 400);
+  //       // }
+  //       return c.json({ message: "internal server error" }, 500);
+  //     }
+  //   },
+  // );
   .post(
     "/sendCar",
     zValidator(
       "json",
       z.object({
-        // car id
-        carId: z.coerce.number().int(),
-        gpsId: z.string().optional(),
-        gpsPass: z.string().optional(),
+        requestId: z.coerce.number().int(),
       }),
     ),
     async (c) => {
@@ -441,151 +577,53 @@ const carReq = new Hono<{
         if (user == null) {
           return c.json({ message: "UnAuthorized" }, 401);
         }
-        const { carId, gpsId, gpsPass } = c.req.valid("json");
-        const validGPSPass = gpsPass
-          ? gpsPass.length > 5 && gpsPass.length < 20
-          : false;
         const db = c.get("db");
-        // let carID=await db
-        //   .update(cars)
-        //   .set({ status: "renting" })
-        //   .where(
-        //     and(
-        //       eq(cars.id, id),
-        //       eq(cars.userId, user.id),
-        //       eq(cars.status, "approved"),
-        //     ),
-        //   ).returning({ id: cars.id });
-        let carID: { id: number; gps: boolean }[] = [];
-        let passHash: string | undefined = undefined;
-        if (gpsId && gpsPass && gpsPass.length > 0) {
-          passHash = await hash(gpsPass);
+        const { requestId } = c.req.valid("json");
+        const rand = secureRandomAlphaNum();
+        const req = await db
+          .select({ carId: requests.carId })
+          .from(requests)
+          .innerJoin(cars, eq(cars.id, requests.carId))
+          .where(
+            and(
+              eq(requests.id, requestId),
+              eq(cars.userId, user.id),
+              eq(cars.status, "approved"),
+            ),
+          );
+        if (req.length == 0) {
+          return c.json({ message: "Request Not Found" }, 404);
         }
-        // await db.transaction(async (tx) => {
-        //   carID = await tx
-        //     .update(cars)
-        //     .set({ status: "renting" })
-        //     .where(
-        //       and(
-        //         eq(cars.id, carId),
-        //         eq(cars.userId, user.id),
-        //         eq(cars.status, "approved"),
-        //       ),
-        //     )
-        //     .returning({ id: cars.id, gps: cars.gps });
-        //   if (carID.length == 0) {
-        //     return c.json({ message: "Car Not Found or available" }, 404);
-        //   }
-        //   if (carID[0].gps && (gpsId == undefined || gpsPass == undefined)) {
-        //     throw new Error("GPS details required for this car");
-        //   }
-        //
-        //   if (carID[0].gps) {
-        //     await tx
-        //       .update(requests)
-        //       .set({ gpsId: gpsId, gpsPass: passHash })
-        //       .where(
-        //         and(eq(requests.carId, carId), eq(requests.status, "approved")),
-        //       );
-        //   }
-        // });
-
+        const carId = req[0].carId;
         try {
-          const carResult = await db
-            .update(cars)
-            .set({ status: "renting" })
-            .where(
-              and(
-                eq(cars.id, carId),
-                eq(cars.userId, user.id),
-                eq(cars.status, "approved"),
-              ),
-            )
-            .returning({ id: cars.id, gps: cars.gps });
-
-          if (carResult.length === 0) {
-            return c.json({ message: "Car Not Found or available" }, 404);
-          }
-
-          const car = carResult[0];
-          if (car.gps && (!gpsId || !validGPSPass)) {
-            // revert car status
-            await db
+          await db.batch([
+            db
               .update(cars)
-              .set({ status: "approved" })
-              .where(eq(cars.id, carId));
-            if (!validGPSPass) {
-              return c.json(
-                {
-                  error: "Password length must bebetween 5 and 20",
-                },
-                422,
-              );
-            }
-            return c.json(
-              {
-                error: "GPS details required for this car",
-              },
-              422,
-            );
-          }
-
-          if (car.gps) {
-            await db
+              .set({ status: "renting" })
+              .where(eq(cars.id, carId)),
+            db
               .update(requests)
-              .set({ gpsId: gpsId, gpsPass: passHash })
-              .where(
-                and(eq(requests.carId, carId), eq(requests.status, "approved")),
-              );
-          }
-
-          return c.json({ message: "Car rented successfully" });
+              .set({ gpsId: rand })
+              .where(eq(requests.id, requestId)),
+          ]);
         } catch (err) {
-          console.error(err);
-          return c.json({ message: "Error during rental process" }, 500);
+          console.log(`Error: ${err}`);
+          await db
+            .update(cars)
+            .set({ status: "approved" })
+            .where(eq(cars.id, carId));
+          return c.json({ error: "Internal Server Error" }, 500);
         }
-        return c.json({ message: "Car is sent for rent" }, 200);
+
+        return c.json({
+          gpsId: rand,
+        });
       } catch (err) {
         console.error(err);
-        // if (
-        //   err instanceof Error &&
-        //   err.message === "GPS details required for this car"
-        // ) {
-        //   return c.json({ message: err.message }, 400);
-        // }
         return c.json({ message: "Internal Server Error" }, 500);
       }
     },
   );
-// requests that are currently active (ie approved or renting) for my cars
-// .get("/currReq", async (c) => {
-//   const user = c.get("user");
-//   if (user == null) {
-//     return c.json({ message: "UnAuthorized" }, 401);
-//   }
-//   const db = c.get("db");
-//   const resp = await db
-//     .select()
-//     .from(requests)
-//     .innerJoin(cars, eq(requests.carId, cars.id))
-//     .where(and(eq(cars.userId, user.id), eq(requests.status, "approved")))
-//     .orderBy(desc(requests.requestedAt));
-//   return c.json(
-//     resp.map((r) => ({
-//       id: r.requests.id,
-//       carId: r.cars.id,
-//       carBrand: r.cars.brand,
-//       carModel: r.cars.model,
-//       //for frontend if status is approved show button to send
-//       //else if status is completed show button to complete and also button to track if gps
-//       status: r.cars.status,
-//       startDate: r.requests.rentedFrom,
-//       endDate: r.requests.rentedTo,
-//       gps: r.cars.gps,
-//     })),
-//     200,
-//   );
-// });
 export default carReq;
 
 // .get("/allMyReq", async (c) => {
