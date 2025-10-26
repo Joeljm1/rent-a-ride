@@ -155,3 +155,28 @@ body {
     @apply bg-black/80 backdrop-blur-sm border border-white/10;
   }
 }
+
+/* Custom Leaflet Car Marker */
+.custom-car-marker {
+  background: transparent !important;
+  border: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-car-marker i {
+  font-size: 32px;
+  color: #3b82f6;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  animation: pulse-car 2s ease-in-out infinite;
+}
+
+@keyframes pulse-car {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}

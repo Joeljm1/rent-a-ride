@@ -4,8 +4,8 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
 import { verify } from "../lib/hash";
-import { cars, requests, users } from "../db/schema";
-import { and, eq, or } from "drizzle-orm";
+import { cars, requests } from "../db/schema";
+import { and, eq } from "drizzle-orm";
 
 const GPSRouter = new Hono<{
   Bindings: CloudflareBindings;
@@ -33,7 +33,7 @@ const GPSRouter = new Hono<{
         if (resp.length === 0) {
           return c.json(
             {
-              error: "Icorrect Id or Password",
+              error: "Incorrect Id or Password",
             },
             401,
           );
@@ -45,7 +45,7 @@ const GPSRouter = new Hono<{
         if (!isValid) {
           return c.json(
             {
-              error: "Icorrect Id or Password",
+              error: "Incorrect Id or Password",
             },
             401,
           );
@@ -100,14 +100,18 @@ const GPSRouter = new Hono<{
     }
     const db = c.get("db");
     const resp = await db
-      .select({ req: requests.id })
+      .select({ 
+        req: requests.id,
+        carOwnerId: cars.userId,
+        renterId: requests.requestedBy,
+      })
       .from(requests)
       .innerJoin(cars, eq(requests.carId, cars.id))
-      .innerJoin(users, eq(cars.userId, user.id))
+      // .innerJoin(users, eq(cars.userId, user.id)) //Force user to be car owner
       .where(
         and(
           eq(requests.gpsId, gpsId),
-          or(eq(users.id, user.id), eq(requests.requestedBy, user.id)),
+          // or(eq(users.id, user.id), eq(requests.requestedBy, user.id)), // This never helped
           eq(cars.status, "renting"),
         ),
       );
@@ -118,6 +122,17 @@ const GPSRouter = new Hono<{
           error: "Not Found ",
         },
         404,
+      );
+    }
+    
+    // Check if user is either the car owner or the renter
+    const { carOwnerId, renterId } = resp[0];
+    if (carOwnerId !== user.id && renterId !== user.id) {
+      return c.json(
+        {
+          error: "UnAuthorized - You must be the car owner or renter",
+        },
+        401,
       );
     }
     const id = c.env.GPS.idFromName(gpsId);

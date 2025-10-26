@@ -143,7 +143,7 @@ export const router = createBrowserRouter([
           {
             path: "track/:gpsId",
             element: <TrackVehicle />,
-          },
+          }
         ],
       },
       { path: "*", element: <NotFound /> },
