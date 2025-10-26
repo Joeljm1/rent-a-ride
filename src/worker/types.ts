@@ -10,6 +10,7 @@ interface AvailableCars {
   fuelType: string;
   transmission: string;
   seats: number;
+  pricePerDay: number;
   pics: AvailableCarPics[];
 }
 
@@ -35,7 +36,7 @@ interface CarList {
 }
 
 interface MyAvailableCars extends AvailableCars {
-  status: "available" | "unavailable" | "renting" | "requesting";
+  status: "available" | "unavailable" | "renting" | "requesting" | "approved";
 }
 
 interface MyCarList {

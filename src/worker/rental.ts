@@ -2,7 +2,7 @@ import type { Variables } from "./types";
 import type { CloudflareBindings } from "./env";
 import { zValidator } from "@hono/zod-validator";
 import * as z from "zod";
-import { carPics, cars, requests } from "../db/schema";
+import { carPics, cars, requests, users } from "../db/schema";
 import { hash, verify } from "../lib/hash";
 import { and, desc, eq, gte, lt, SQL } from "drizzle-orm";
 import { Hono } from "hono";
@@ -209,33 +209,44 @@ const carReq = new Hono<{
       }
       const db = c.get("db");
       const req = await db
-        .select()
+        .select({
+          request: requests,
+          car: cars,
+          carPic: carPics,
+          requester: users,
+        })
         .from(requests)
         .innerJoin(cars, eq(requests.carId, cars.id))
         .innerJoin(
           carPics,
           and(eq(cars.id, carPics.carId), eq(carPics.isCover, true)),
         )
+        .innerJoin(users, eq(requests.requestedBy, users.id))
         .where(
           and(
             eq(cars.userId, user.id),
             eq(requests.status, "pending"),
             gte(requests.rentedFrom, new Date()),
           ),
-        );
+        )
+        .orderBy(desc(requests.requestedAt));
 
       const resp = req.map((elem) => ({
-        reqId: elem.requests.id,
-        requestedAt: elem.requests.requestedAt,
-        rentedFrom: elem.requests.rentedFrom,
-        rentedTo: elem.requests.rentedTo,
-        reqMessage: elem.requests.reqMessage,
+        reqId: elem.request.id,
+        requestedAt: elem.request.requestedAt,
+        rentedFrom: elem.request.rentedFrom,
+        rentedTo: elem.request.rentedTo,
+        reqMessage: elem.request.reqMessage,
         status: "pending",
-        carId: elem.cars.id,
-        brand: elem.cars.brand,
-        model: elem.cars.model,
-        year: elem.cars.year,
-        pic: picBaseURL + elem.carPics.url,
+        carId: elem.car.id,
+        brand: elem.car.brand,
+        model: elem.car.model,
+        year: elem.car.year,
+        pic: picBaseURL + elem.carPic.url,
+        pricePerDay: elem.car.pricePerDay,
+        requesterName: elem.requester.name,
+        requesterEmail: elem.requester.email,
+        requesterImage: elem.requester.image,
       }));
       return c.json(resp);
     } catch (err) {

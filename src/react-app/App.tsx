@@ -17,6 +17,7 @@ import ManageVehicles from "./pages/Host/ManageVehicles.tsx";
 import HostBookings from "./pages/Host/HostBookings.tsx";
 import HostEarnings from "./pages/Host/HostEarnings.tsx";
 import HostProfile from "./pages/Host/HostProfile.tsx";
+import HostPendingRequests from "./pages/Host/HostPendingRequests.tsx";
 import AIChat from "./pages/AIChat.tsx";
 
 export const router = createBrowserRouter([
@@ -129,6 +130,10 @@ export const router = createBrowserRouter([
             path: "profile",
             element: <HostProfile />,
           },
+          {
+            path: "pending-requests",
+            element: <HostPendingRequests />, 
+          }
         ],
       },
       { path: "*", element: <NotFound /> },

@@ -1,145 +1,294 @@
-import React, { useMemo, useState } from "react";
-import { Link, useLocation } from "react-router";
-import type { Booking } from "./types";
+import React, { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { motion } from "motion/react";
+import BaseURL from "@/../../BaseURL.ts";
 
-const recentBookings: Booking[] = [
-    {
-      id: 1,
-      car: "Toyota Camry",
-      customer: "Vivek Binod.",
-      dates: "Oct 7-10",
-      status: "confirmed",
-      amount: "₹3,000",
-    },
-    {
-      id: 2,
-      car: "Honda CR-V",
-      customer: "Joel Joseph",
-      dates: "Oct 8-12",
-      status: "pending",
-      amount: "₹5,200",
-    },
-    {
-      id: 3,
-      car: "BMW 3 Series",
-      customer: "Divon John",
-      dates: "Oct 10-15",
-      status: "confirmed",
-      amount: "₹9,500",
-    },
-  ];
+type RequestStatus = "all" | "pending" | "approved" | "rejected" | "cancelled" | "completed" | "expired";
 
-export default function HostBookings(): React.ReactElement {
-  const [query, setQuery] = useState<string>("");
-  const [filter, setFilter] = useState<"all" | "confirmed" | "pending">("all");
+interface RentalRequest {
+  id: number;
+  carId: number;
+  carBrand: string;
+  carModel: string;
+  carYear: number;
+  reqAt: string;
+  from: string;
+  to: string;
+  status: RequestStatus;
+  carPic: string;
+  price: number;
+  hasGPS: boolean;
+}
 
-  const filtered = useMemo(() => {
-    return recentBookings.filter((b) => {
-      if (filter !== "all" && b.status !== filter) return false;
-      if (!query) return true;
-      const q = query.toLowerCase();
-      return (
-        b.car.toLowerCase().includes(q) ||
-        b.customer.toLowerCase().includes(q) ||
-        b.dates.toLowerCase().includes(q)
+export default function HostRequests(): React.ReactElement {
+  const [requests, setRequests] = useState<RentalRequest[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<RequestStatus>("all");
+  const [page, setPage] = useState<number>(1);
+  const pageSize = 10;
+
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${BaseURL}/api/rent/allMyReq?page=${page}&pageSize=${pageSize}&filter=${filter}`,
+        {
+          credentials: "include",
+        }
       );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch requests");
+      }
+
+      const data = await response.json();
+      setRequests(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, [filter, page]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+      case "approved":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+      case "rejected":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+      case "cancelled":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+      case "completed":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+      case "expired":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
-  }, [query, filter]);
+  };
 
-  // detect route to know if this component is rendered as standalone bookings page
-  const location = useLocation();
-  const pathname = location?.pathname || "";
-  const isStandalone = pathname === "/bookings" || pathname.endsWith("/bookings") || pathname.includes("/bookings?");
-
-  const innerContent = (
-    <>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-semibold">Recent Bookings</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Manage and review recent reservations</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by car, customer, or date"
-            className="ml-4 px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-700 border text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <Link to="../bookings" className="text-indigo-600 hover:underline text-sm">View All</Link>
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-3 mb-4">
-        <div className="text-sm text-gray-600 dark:text-gray-400">Filter:</div>
-        <button
-          onClick={() => setFilter("all")}
-          className={`px-3 py-1 rounded-full text-sm ${filter === "all" ? "bg-indigo-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => setFilter("confirmed")}
-          className={`px-3 py-1 rounded-full text-sm ${filter === "confirmed" ? "bg-green-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}
-        >
-          Confirmed
-        </button>
-        <button
-          onClick={() => setFilter("pending")}
-          className={`px-3 py-1 rounded-full text-sm ${filter === "pending" ? "bg-yellow-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}
-        >
-          Pending
-        </button>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        {filtered.length === 0 ? (
-          <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-            No bookings found. Try adjusting your search or filters.
-          </div>
-        ) : (
-          filtered.map((b) => (
-            <div key={b.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
-              <div className="flex items-center space-x-5">
-                <div className="w-14 h-14 rounded-lg bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-lg">
-                  {b.car
-                    .split(" ")
-                    .slice(0, 2)
-                    .map((w) => w[0])
-                    .join("")}
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{b.car}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{b.customer} • {b.dates}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-gray-900 dark:text-gray-100">{b.amount}</p>
-                <span className={`inline-block mt-2 text-xs px-2.5 py-0.5 rounded-full ${b.status === "confirmed" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"}`}>
-                  {b.status}
-                </span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </>
-  );
-
-  if (isStandalone) {
-    return (
-      <div className="w-full py-20 px-25">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 pl-8 lg:pl-16">
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
-            {innerContent}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const calculateDays = (from: string, to: string) => {
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    const diffTime = Math.abs(toDate.getTime() - fromDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
 
   return (
-    <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
-      {innerContent}
+    <div className="py-6 px-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-6"
+        >
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
+            My Rental Requests
+          </h1>
+          <p className="text-base text-gray-600 dark:text-gray-300">
+            Track and manage all your vehicle rental requests
+          </p>
+        </motion.div>
+
+        {/* Filter Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex flex-wrap gap-2 mb-6"
+        >
+          {(["all", "pending", "approved", "rejected", "cancelled", "completed", "expired"] as RequestStatus[]).map((status) => (
+            <Button
+              key={status}
+              onClick={() => {
+                setFilter(status);
+                setPage(1);
+              }}
+              className={`px-4 py-2 rounded-full font-semibold tracking-wide transition-all ${
+                filter === status
+                  ? "bg-blue-600 text-white shadow-lg"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </Button>
+          ))}
+        </motion.div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 p-4 rounded-lg mb-6"
+          >
+            {error}
+          </motion.div>
+        )}
+
+        {/* Requests List */}
+        {!loading && !error && (
+          <>
+            {requests.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-20"
+              >
+                <div className="text-6xl mb-4">🚗</div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  No requests found
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  You haven't made any rental requests yet.
+                </p>
+              </motion.div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6">
+                {requests.map((request, index) => (
+                  <motion.div
+                    key={request.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.05 }}
+                  >
+                    <Card className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-200 dark:border-gray-700">
+                      <div className="flex flex-col md:flex-row gap-6">
+                        {/* Car Image */}
+                        <div className="w-full md:w-48 h-48 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
+                          <img
+                            src={request.carPic}
+                            alt={`${request.carBrand} ${request.carModel}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        {/* Request Details */}
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                                {request.carBrand} {request.carModel}
+                              </h3>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {request.carYear} {request.hasGPS && "• GPS Enabled"}
+                              </p>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${getStatusColor(
+                                request.status
+                              )}`}
+                            >
+                              {request.status}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                                Requested On
+                              </p>
+                              <p className="font-semibold text-gray-900 dark:text-white">
+                                {formatDate(request.reqAt)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                                Rental Period
+                              </p>
+                              <p className="font-semibold text-gray-900 dark:text-white">
+                                {formatDate(request.from)} - {formatDate(request.to)}
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {calculateDays(request.from, request.to)} days
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Total Amount
+                              </p>
+                              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 tracking-tight">
+                                ₹{(request.price * calculateDays(request.from, request.to)).toLocaleString()}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                ₹{request.price}/day
+                              </p>
+                            </div>
+                            
+                            {request.status === "pending" && (
+                              <Button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold tracking-wide">
+                                Cancel Request
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {requests.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex justify-center gap-4 mt-8"
+              >
+                <Button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-6 py-2 rounded-lg font-semibold bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                >
+                  Previous
+                </Button>
+                <span className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold">
+                  Page {page}
+                </span>
+                <Button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={requests.length < pageSize}
+                  className="px-6 py-2 rounded-lg font-semibold bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                >
+                  Next
+                </Button>
+              </motion.div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

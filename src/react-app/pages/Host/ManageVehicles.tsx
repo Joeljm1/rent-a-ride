@@ -110,7 +110,7 @@ export default function ManageVehicles(): React.ReactElement {
     return {
       total: vehicles.length,
       available: vehicles.filter((v) => v.status === "available").length,
-      rented: vehicles.filter((v) => v.status === "renting").length,
+      rented: vehicles.filter((v) => v.status === "renting" || v.status === "approved").length,
       unavailable: vehicles.filter((v) => v.status === "unavailable").length,
     };
   }, [vehicles]);
@@ -123,7 +123,8 @@ export default function ManageVehicles(): React.ReactElement {
     if (filterStatus !== "all") {
       filtered = filtered.filter((v) => {
         if (filterStatus === "rented") {
-          return v.status === "renting" || v.status === "unavailable";
+          // Include approved (rental approved but not yet started) and renting (currently being rented)
+          return v.status === "renting" || v.status === "approved";
         }
         return v.status === filterStatus;
       });

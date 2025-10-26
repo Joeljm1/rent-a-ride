@@ -11,6 +11,7 @@ export default function HostLayout(): React.ReactElement {
     { to: "vehicles", label: "My Vehicles", icon: "🚗" },
     { to: "upload", label: "Add Vehicle", icon: "➕" },
     { to: "bookings", label: "Bookings", icon: "📅" },
+    { to: "pending-requests", label: "Pending Requests", icon: "📋" },
     { to: "earnings", label: "Earnings", icon: "💰" },
     { to: "profile", label: "Profile", icon: "👤" },
   ];

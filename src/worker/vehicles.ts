@@ -306,6 +306,7 @@ const carApp = new Hono<{
             fuelType: curr.fuelType,
             transmission: curr.transmission,
             seats: curr.seats,
+            pricePerDay: curr.pricePerDay,
             pics: carPicsVal[curr.id] || [],
           });
           return acc;
@@ -364,6 +365,7 @@ const carApp = new Hono<{
           fuelType: car.fuelType,
           transmission: car.transmission,
           seats: car.seats,
+          pricePerDay: car.pricePerDay,
           pics: picsRows,
         };
 
@@ -573,6 +575,7 @@ const carApp = new Hono<{
               fuelType: car.fuelType,
               transmission: car.transmission,
               seats: car.seats,
+              pricePerDay: car.pricePerDay,
               status: car.status as
                 | "available"
                 | "unavailable"
