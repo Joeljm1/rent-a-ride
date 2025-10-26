@@ -119,7 +119,7 @@ const carReq = new Hono<{
           .select()
           .from(requests)
           .innerJoin(cars, eq(requests.carId, cars.id))
-          .innerJoin(
+          .leftJoin(
             carPics,
             and(eq(carPics.carId, cars.id), eq(carPics.isCover, true)),
           )
@@ -141,7 +141,7 @@ const carReq = new Hono<{
             r.requests.status === "pending"
               ? "expired"
               : r.requests.status,
-          carPic: picBaseURL + r.carPics.url,
+          carPic: r.carPics?.url ? picBaseURL + r.carPics.url : picBaseURL,
           price: r.cars.pricePerDay,
           hasGPS: r.cars.gps,
         }));
@@ -217,7 +217,7 @@ const carReq = new Hono<{
         })
         .from(requests)
         .innerJoin(cars, eq(requests.carId, cars.id))
-        .innerJoin(
+        .leftJoin(
           carPics,
           and(eq(cars.id, carPics.carId), eq(carPics.isCover, true)),
         )
@@ -242,7 +242,7 @@ const carReq = new Hono<{
         brand: elem.car.brand,
         model: elem.car.model,
         year: elem.car.year,
-        pic: picBaseURL + elem.carPic.url,
+        pic: elem.carPic?.url ? picBaseURL + elem.carPic.url : picBaseURL,
         pricePerDay: elem.car.pricePerDay,
         requesterName: elem.requester.name,
         requesterEmail: elem.requester.email,
@@ -307,21 +307,24 @@ const carReq = new Hono<{
           // } catch (e) {
           //   console.error(`Error updating db :${e}`);
           try {
+            const carId = req[0].requests.carId;
             console.log(`Approving request ${id} for car ${req[0].cars.id}`);
             
-            const requestUpdate = await db
+            // Update request status
+            await db
               .update(requests)
               .set({ status: "approved" })
               .where(eq(requests.id, id));
             
-            console.log(`Request updated:`, requestUpdate);
+            console.log(`Request ${id} updated successfully`);
             
-            const carUpdate = await db
+            // Update car status using the carId from the request
+            await db
               .update(cars)
               .set({ status: "approved" })
-              .where(eq(cars.id, req[0].cars.id));
-            
-            console.log(`Car updated:`, carUpdate);
+              .where(eq(cars.id, carId));
+
+            console.log(`Car ${carId} updated successfully`);
             
             return c.json({ message: "Request Approved" }, 200);
           } catch (error) {
@@ -331,8 +334,6 @@ const carReq = new Hono<{
               500,
             );
           }
-          // }
-          // return c.json({ message: "Request Approved" }, 200);
         } else if (action == "reject") {
           //reject
           try {
