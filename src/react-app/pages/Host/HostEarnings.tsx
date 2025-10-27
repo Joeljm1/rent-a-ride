@@ -77,7 +77,7 @@ export default function HostEarnings(): React.ReactElement {
       color: "bg-blue-500",
     },
     {
-      label: "Pending Payouts",
+      label: "Pending Money To Receive",
       value: `₹${stats.pendingPayout.toLocaleString()}`,
       icon: "⏳",
       color: "bg-yellow-500",
@@ -274,34 +274,7 @@ export default function HostEarnings(): React.ReactElement {
       </div>
 
       {/* Payout Information */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold mb-4">Payout Schedule</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">Next Payout</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {payoutInfo.nextPayoutDate
-                    ? new Date(payoutInfo.nextPayoutDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-                    : 'Not scheduled'}
-                </p>
-              </div>
-              <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">₹{payoutInfo.pendingAmount.toLocaleString()}</p>
-            </div>
-            <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Payment Method</p>
-              <div className="flex items-center space-x-2">
-                <span className="text-2xl">🏦</span>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{payoutInfo.payoutMethod}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Configure in settings</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
           <h3 className="text-lg font-semibold mb-4">Earnings Summary</h3>
           <div className="space-y-3">

@@ -36,43 +36,40 @@ const earningsApp = new Hono<{
         });
       }
 
-      // Get all completed bookings
-      const completedBookings = await db
-        .select({
-          pricePerDay: cars.pricePerDay,
-          rentedFrom: requests.rentedFrom,
-          rentedTo: requests.rentedTo,
-          status: requests.status,
-        })
-        .from(requests)
-        .innerJoin(cars, eq(requests.carId, cars.id))
-        .where(
-          and(
-            sql`${cars.id} IN ${carIds}`,
-            sql`${requests.status} IN ('approved', 'completed')`,
-          ),
-        );
-
-      // Calculate earnings with proper day calculation
+      // Helper function to calculate amount
       const calculateAmount = (pricePerDay: number, from: Date, to: Date) => {
         const diffTime = Math.abs(to.getTime() - from.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return pricePerDay * diffDays;
       };
 
-      // Calculate total earnings
-      const totalEarnings = completedBookings
-        .filter((b) => b.status === "completed")
-        .reduce((sum, booking) => {
-          const amount = calculateAmount(
-            booking.pricePerDay,
-            new Date(booking.rentedFrom),
-            new Date(booking.rentedTo)
-          );
-          return sum + amount;
-        }, 0);
+      // Get ONLY completed bookings for actual earnings (money received)
+      const completedBookings = await db
+        .select({
+          pricePerDay: cars.pricePerDay,
+          rentedFrom: requests.rentedFrom,
+          rentedTo: requests.rentedTo,
+        })
+        .from(requests)
+        .innerJoin(cars, eq(requests.carId, cars.id))
+        .where(
+          and(
+            sql`${cars.id} IN ${carIds}`,
+            eq(requests.status, "completed"), // Only completed = money received
+          ),
+        );
 
-      // Calculate this month's earnings
+      // Calculate total earnings (only from completed rentals)
+      const totalEarnings = completedBookings.reduce((sum, booking) => {
+        const amount = calculateAmount(
+          booking.pricePerDay,
+          new Date(booking.rentedFrom),
+          new Date(booking.rentedTo)
+        );
+        return sum + amount;
+      }, 0);
+
+      // Calculate this month's earnings (only completed)
       const currentMonth = new Date();
       currentMonth.setDate(1);
       currentMonth.setHours(0, 0, 0, 0);
@@ -80,7 +77,7 @@ const earningsApp = new Hono<{
       const monthlyEarnings = completedBookings
         .filter((b) => {
           const bookingDate = new Date(b.rentedFrom);
-          return bookingDate >= currentMonth && b.status === "completed";
+          return bookingDate >= currentMonth;
         })
         .reduce((sum, booking) => {
           const amount = calculateAmount(
@@ -91,22 +88,34 @@ const earningsApp = new Hono<{
           return sum + amount;
         }, 0);
 
-      // Calculate pending payout (approved but not completed)
-      const pendingPayout = completedBookings
-        .filter((b) => b.status === "approved")
-        .reduce((sum, booking) => {
-          const amount = calculateAmount(
-            booking.pricePerDay,
-            new Date(booking.rentedFrom),
-            new Date(booking.rentedTo)
-          );
-          return sum + amount;
-        }, 0);
+      // Get approved bookings for pending payout (waiting for payment)
+      const approvedBookings = await db
+        .select({
+          pricePerDay: cars.pricePerDay,
+          rentedFrom: requests.rentedFrom,
+          rentedTo: requests.rentedTo,
+        })
+        .from(requests)
+        .innerJoin(cars, eq(requests.carId, cars.id))
+        .where(
+          and(
+            sql`${cars.id} IN ${carIds}`,
+            eq(requests.status, "approved"), // Approved = waiting for completion/payment
+          ),
+        );
 
-      // Calculate average per booking
-      const completedCount = completedBookings.filter(
-        (b) => b.status === "completed",
-      ).length;
+      // Calculate pending payout (approved but not yet paid)
+      const pendingPayout = approvedBookings.reduce((sum, booking) => {
+        const amount = calculateAmount(
+          booking.pricePerDay,
+          new Date(booking.rentedFrom),
+          new Date(booking.rentedTo)
+        );
+        return sum + amount;
+      }, 0);
+
+      // Calculate average per booking (only completed ones)
+      const completedCount = completedBookings.length;
       const averagePerBooking =
         completedCount > 0 ? totalEarnings / completedCount : 0;
 
@@ -188,21 +197,16 @@ const earningsApp = new Hono<{
           booking: `#${t.id.toString().padStart(4, "0")}`,
           customer: t.customerName,
           vehicle: `${t.brand} ${t.model}`,
-          amount: Math.round(amount),
+          amount: t.status === "cancelled" ? 0 : Math.round(amount), // No earnings from cancelled bookings
           status:
             t.status === "completed"
               ? "completed"
               : t.status === "approved"
                 ? "pending"
                 : t.status === "cancelled"
-                  ? "refunded"
+                  ? "cancelled"
                   : "processing",
-          type:
-            t.status === "completed"
-              ? "booking"
-              : t.status === "cancelled"
-                ? "refund"
-                : "booking",
+          type: "booking", // All are bookings from owner's perspective
         };
       });
 
