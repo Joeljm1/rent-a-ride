@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,15 @@ const carIcon = L.divIcon({
   iconSize: [40, 40],
   iconAnchor: [20, 40],
   popupAnchor: [0, -40],
+});
+
+// Start point marker
+const startIcon = L.divIcon({
+  html: '<div style="background: #10b981; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">S</div>',
+  className: "start-marker",
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  popupAnchor: [0, -10],
 });
 
 interface VehicleLocation {
@@ -46,8 +55,10 @@ export default function TrackVehicle(): React.ReactElement {
     "connecting" | "connected" | "disconnected" | "error"
   >("connecting");
   const [routeHistory, setRouteHistory] = useState<[number, number][]>([]);
+  const [liveRoute, setLiveRoute] = useState<[number, number][]>([]);
   const [showHistory, setShowHistory] = useState<boolean>(true);
   const [reqId, setReqId] = useState<number | null>(null);
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   // Fetch route history
@@ -125,13 +136,34 @@ export default function TrackVehicle(): React.ReactElement {
           const message = event.data as string;
           const latMatch = message.match(/Lat:([-\d.]+)/);
           const longMatch = message.match(/Long:([-\d.]+)/);
-          console.log("Parsed lat:", latMatch?.[1], "lng:", longMatch?.[1]);
-          if (latMatch && longMatch) {
+          const timeMatch = message.match(/Time:([-\d.]+)/);
+          
+          console.log("Parsed lat:", latMatch?.[1], "lng:", longMatch?.[1], "time:", timeMatch?.[1]);
+          
+          if (latMatch && longMatch && timeMatch) {
             const lat = parseFloat(latMatch[1]);
             const lng = parseFloat(longMatch[1]);
+            const timestamp = new Date(parseInt(timeMatch[1]) * 1000);
+            
             if (!isNaN(lat) && !isNaN(lng)) {
               console.log("Setting location:", { lat, lng });
-              setLocation({ lat, lng, timestamp: new Date().toISOString() });
+              const newLocation = { lat, lng, timestamp: timestamp.toISOString() };
+              setLocation(newLocation);
+              setLastUpdateTime(timestamp);
+              
+              // Add to live route if this is a new position
+              setLiveRoute(prevRoute => {
+                const newPoint: [number, number] = [lat, lng];
+                const lastPoint = prevRoute[prevRoute.length - 1];
+                
+                // Only add if it's significantly different from the last point (avoid duplicate points)
+                if (!lastPoint || 
+                    Math.abs(lastPoint[0] - lat) > 0.0001 || 
+                    Math.abs(lastPoint[1] - lng) > 0.0001) {
+                  return [...prevRoute, newPoint];
+                }
+                return prevRoute;
+              });
             } else {
               console.warn("Invalid lat/lng values:", lat, lng);
             }
@@ -363,24 +395,54 @@ export default function TrackVehicle(): React.ReactElement {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {/* Route History Polyline */}
+                
+                {/* Historical Route Polyline (from database) */}
                 {showHistory && routeHistory.length > 0 && (
+                  <>
+                    <Polyline
+                      positions={routeHistory}
+                      pathOptions={{
+                        color: "#8b5cf6",
+                        weight: 4,
+                        opacity: 0.6,
+                        dashArray: "10, 10",
+                      }}
+                    />
+                    {/* Start point marker */}
+                    <Marker position={routeHistory[0]} icon={startIcon}>
+                      <Popup>
+                        <div className="text-center">
+                          <p className="font-bold text-lg mb-2">🚩 Trip Start</p>
+                          <p className="text-sm">
+                            <strong>Lat:</strong> {routeHistory[0][0].toFixed(6)}°
+                          </p>
+                          <p className="text-sm">
+                            <strong>Lng:</strong> {routeHistory[0][1].toFixed(6)}°
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </>
+                )}
+                
+                {/* Live Route Polyline (from WebSocket) */}
+                {liveRoute.length > 1 && (
                   <Polyline
-                    positions={routeHistory}
+                    positions={liveRoute}
                     pathOptions={{
-                      color: "#8b5cf6",
-                      weight: 4,
-                      opacity: 0.7,
-                      dashArray: "10, 10",
+                      color: "#10b981",
+                      weight: 5,
+                      opacity: 0.8,
+                      dashArray: "none",
                     }}
                   />
                 )}
+                
+                {/* Current location marker */}
                 <Marker position={[location.lat, location.lng]} icon={carIcon}>
                   <Popup>
                     <div className="text-center">
-                      <p className="font-bold text-lg mb-2">
-                        🚗 Vehicle Location
-                      </p>
+                      <p className="font-bold text-lg mb-2">🚗 Current Location</p>
                       <p className="text-sm">
                         <strong>Lat:</strong> {location.lat.toFixed(6)}°
                       </p>
@@ -390,9 +452,27 @@ export default function TrackVehicle(): React.ReactElement {
                       <p className="text-xs text-gray-600 mt-2">
                         Updated: {new Date(location.timestamp).toLocaleString()}
                       </p>
+                      {lastUpdateTime && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          Live data: {lastUpdateTime.toLocaleTimeString()}
+                        </p>
+                      )}
                     </div>
                   </Popup>
                 </Marker>
+                
+                {/* Accuracy circle for current position */}
+                <Circle
+                  center={[location.lat, location.lng]}
+                  radius={50}
+                  pathOptions={{
+                    color: "#3b82f6",
+                    fillColor: "#3b82f6",
+                    fillOpacity: 0.1,
+                    weight: 2,
+                  }}
+                />
+                
                 <ChangeView center={[location.lat, location.lng]} />
               </MapContainer>
             </div>
