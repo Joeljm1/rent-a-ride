@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 URL="http://localhost:5173/api/gps/updateLoc"
-GPS_ID="LrmEwYyYb2"
+GPS_ID="fTETsx38gK"
 GPS_PASS="12345678"
 
 # Array of [lat, lon] pairs
 COORDS=(
-  "1.3232,20.3123"
-  "1.4233,20.3125"
-  "1.5234,20.3127"
-  "1.6235,20.3129"
-  "1.7236,20.3131"
-  "1.3237,20.3133"
+  "3.3232,25.3123"
+  "6.4233,25.3125"
+  "6.5234,31.3127"
+  "7.6235,26.3129"
+  "3.7236,23.3131"
+  "2.3237,22.3133"
 )
 
 for coord in "${COORDS[@]}"; do
