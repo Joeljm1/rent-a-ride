@@ -39,9 +39,9 @@ const earningsApp = new Hono<{
       // Get all completed bookings
       const completedBookings = await db
         .select({
-          // WARN: This will not work as request.rentedTo is stored as integers not ISO strings
-          amount: sql<number>`${cars.pricePerDay} * (julianday(${requests.rentedTo}) - julianday(${requests.rentedFrom}))`,
+          pricePerDay: cars.pricePerDay,
           rentedFrom: requests.rentedFrom,
+          rentedTo: requests.rentedTo,
           status: requests.status,
         })
         .from(requests)
@@ -53,10 +53,24 @@ const earningsApp = new Hono<{
           ),
         );
 
+      // Calculate earnings with proper day calculation
+      const calculateAmount = (pricePerDay: number, from: Date, to: Date) => {
+        const diffTime = Math.abs(to.getTime() - from.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return pricePerDay * diffDays;
+      };
+
       // Calculate total earnings
       const totalEarnings = completedBookings
         .filter((b) => b.status === "completed")
-        .reduce((sum, booking) => sum + (booking.amount || 0), 0);
+        .reduce((sum, booking) => {
+          const amount = calculateAmount(
+            booking.pricePerDay,
+            new Date(booking.rentedFrom),
+            new Date(booking.rentedTo)
+          );
+          return sum + amount;
+        }, 0);
 
       // Calculate this month's earnings
       const currentMonth = new Date();
@@ -68,12 +82,26 @@ const earningsApp = new Hono<{
           const bookingDate = new Date(b.rentedFrom);
           return bookingDate >= currentMonth && b.status === "completed";
         })
-        .reduce((sum, booking) => sum + (booking.amount || 0), 0);
+        .reduce((sum, booking) => {
+          const amount = calculateAmount(
+            booking.pricePerDay,
+            new Date(booking.rentedFrom),
+            new Date(booking.rentedTo)
+          );
+          return sum + amount;
+        }, 0);
 
       // Calculate pending payout (approved but not completed)
       const pendingPayout = completedBookings
         .filter((b) => b.status === "approved")
-        .reduce((sum, booking) => sum + (booking.amount || 0), 0);
+        .reduce((sum, booking) => {
+          const amount = calculateAmount(
+            booking.pricePerDay,
+            new Date(booking.rentedFrom),
+            new Date(booking.rentedTo)
+          );
+          return sum + amount;
+        }, 0);
 
       // Calculate average per booking
       const completedCount = completedBookings.filter(
@@ -124,10 +152,10 @@ const earningsApp = new Hono<{
           carId: requests.carId,
           brand: cars.brand,
           model: cars.model,
+          pricePerDay: cars.pricePerDay,
           customerName: sql<string>`COALESCE((SELECT name FROM users WHERE id = ${requests.requestedBy}), 'Unknown')`,
           rentedFrom: requests.rentedFrom,
           rentedTo: requests.rentedTo,
-          amount: sql<number>`${cars.pricePerDay} * (julianday(${requests.rentedTo}) - julianday(${requests.rentedFrom}))`,
           status: requests.status,
           completedAt: requests.completedAt,
           requestedAt: requests.requestedAt,
@@ -143,29 +171,40 @@ const earningsApp = new Hono<{
         .orderBy(desc(requests.requestedAt))
         .limit(50);
 
+      // Helper function to calculate rental days
+      const calculateDays = (from: Date, to: Date) => {
+        const diffTime = Math.abs(to.getTime() - from.getTime());
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      };
+
       // Transform to frontend format
-      const formattedTransactions = transactions.map((t) => ({
-        id: t.id,
-        date: t.completedAt || t.requestedAt,
-        booking: `#${t.id.toString().padStart(4, "0")}`,
-        customer: t.customerName,
-        vehicle: `${t.brand} ${t.model}`,
-        amount: Math.round(t.amount || 0),
-        status:
-          t.status === "completed"
-            ? "completed"
-            : t.status === "approved"
-              ? "pending"
+      const formattedTransactions = transactions.map((t) => {
+        const days = calculateDays(new Date(t.rentedFrom), new Date(t.rentedTo));
+        const amount = t.pricePerDay * days;
+        
+        return {
+          id: t.id,
+          date: t.completedAt || t.requestedAt,
+          booking: `#${t.id.toString().padStart(4, "0")}`,
+          customer: t.customerName,
+          vehicle: `${t.brand} ${t.model}`,
+          amount: Math.round(amount),
+          status:
+            t.status === "completed"
+              ? "completed"
+              : t.status === "approved"
+                ? "pending"
+                : t.status === "cancelled"
+                  ? "refunded"
+                  : "processing",
+          type:
+            t.status === "completed"
+              ? "booking"
               : t.status === "cancelled"
-                ? "refunded"
-                : "processing",
-        type:
-          t.status === "completed"
-            ? "booking"
-            : t.status === "cancelled"
-              ? "refund"
-              : "booking",
-      }));
+                ? "refund"
+                : "booking",
+        };
+      });
 
       return c.json({ transactions: formattedTransactions });
     } catch (error) {
@@ -203,7 +242,9 @@ const earningsApp = new Hono<{
       // Calculate pending payout (approved but not completed)
       const pendingBookings = await db
         .select({
-          amount: sql<number>`${cars.pricePerDay} * (julianday(${requests.rentedTo}) - julianday(${requests.rentedFrom}))`,
+          pricePerDay: cars.pricePerDay,
+          rentedFrom: requests.rentedFrom,
+          rentedTo: requests.rentedTo,
         })
         .from(requests)
         .innerJoin(cars, eq(requests.carId, cars.id))
@@ -211,10 +252,17 @@ const earningsApp = new Hono<{
           and(sql`${cars.id} IN ${carIds}`, eq(requests.status, "approved")),
         );
 
-      const pendingAmount = pendingBookings.reduce(
-        (sum, booking) => sum + (booking.amount || 0),
-        0,
-      );
+      // Helper function to calculate rental days
+      const calculateDays = (from: Date, to: Date) => {
+        const diffTime = Math.abs(to.getTime() - from.getTime());
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      };
+
+      const pendingAmount = pendingBookings.reduce((sum, booking) => {
+        const days = calculateDays(new Date(booking.rentedFrom), new Date(booking.rentedTo));
+        const amount = booking.pricePerDay * days;
+        return sum + amount;
+      }, 0);
 
       // Calculate next payout date (e.g., 5th of next month)
       const nextPayout = new Date();

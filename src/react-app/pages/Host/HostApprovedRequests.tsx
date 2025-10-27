@@ -287,7 +287,7 @@ export default function HostApprovedRequests(): React.ReactElement {
                         <div className="w-full lg:w-64 h-48 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
                           <img
                             src={request.pic}
-                            alt={`${request.brand} ${request.model}`}
+                            alt={`${request.brand.toUpperCase()} ${request.model.toUpperCase()}`}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -298,7 +298,7 @@ export default function HostApprovedRequests(): React.ReactElement {
                           <div className="flex items-start justify-between mb-4">
                             <div>
                               <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-                                {request.brand} {request.model}
+                                {request.brand.toUpperCase()} {request.model.toUpperCase()  }
                               </h3>
                               <p className="text-sm text-gray-500 dark:text-gray-400">
                                 {request.year}
