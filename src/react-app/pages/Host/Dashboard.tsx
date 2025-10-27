@@ -167,7 +167,7 @@ export default function Dashboard() {
             </h3>
             <div className="space-y-3">
               <Link
-                to="../upload"
+                to="../host/upload"
                 className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-lg transition-all shadow-md hover:shadow-lg font-semibold"
               >
                 <span className="text-xl">➕</span>
