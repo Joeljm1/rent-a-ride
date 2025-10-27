@@ -8,7 +8,7 @@ import { and, desc, eq, gte, lt, SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import BaseURL from "../../BaseURL";
 
-const picBaseURL =
+export const picBaseURL =
   BaseURL == "https://car-rental.joeltest.workers.dev"
     ? `https://pub-032f94942a2e444fa6cc5af38ce60e9e.r2.dev/`
     : "../assets/hono.svg";
@@ -766,10 +766,13 @@ const carReq = new Hono<{
             .set({ status: "available" })
             .where(eq(cars.id, carId)),
         ]);
-        
-        return c.json({ 
-          message: "Rental completed successfully. Car is now available." 
-        }, 200);
+
+        return c.json(
+          {
+            message: "Rental completed successfully. Car is now available.",
+          },
+          200,
+        );
       } catch (err) {
         console.log(`Error: ${err}`);
         return c.json(
