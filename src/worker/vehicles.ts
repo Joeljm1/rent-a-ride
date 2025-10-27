@@ -25,6 +25,7 @@ import {
   SQL,
 } from "drizzle-orm";
 import { Hono } from "hono";
+import { picBaseURL } from "./rental";
 
 export const carSort = [
   "newest",
@@ -594,7 +595,7 @@ const carApp = new Hono<{
           } else if (pic) {
             carRec[car.id].pics.push({
               id: pic.id,
-              url: pic.url,
+              url: picBaseURL + pic.url,
               isCover: pic.isCover,
             });
           }
