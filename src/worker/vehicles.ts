@@ -300,6 +300,7 @@ const carApp = new Hono<{
           acc.push({
             id: curr.id,
             distanceUsed: curr.distanceUsed,
+            description: curr.description,
             brand: curr.brand,
             model: curr.model,
             year: curr.year,
@@ -359,6 +360,7 @@ const carApp = new Hono<{
         const vehicleWithPics: AvailableCars = {
           id: car.id,
           distanceUsed: car.distanceUsed,
+          description: car.description,
           brand: car.brand,
           model: car.model,
           year: car.year,
@@ -569,6 +571,7 @@ const carApp = new Hono<{
             carRec[car.id] = {
               id: car.id,
               distanceUsed: car.distanceUsed,
+              description: car.description,
               brand: car.brand,
               model: car.model,
               year: car.year,

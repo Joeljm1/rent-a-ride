@@ -158,7 +158,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
                             <div className="text-center">
-                              <div className="text-4xl mb-2">🚗</div>
+                              <div className="text-4xl mb-2"><i className="fi fi-sr-car-alt"></i></div>
                               <p className="text-sm">Image unavailable</p>
                             </div>
                           </div>
@@ -183,7 +183,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
               <div className="text-center">
-                <div className="text-4xl mb-2">🚗</div>
+                <div className="text-4xl mb-2"><i className="fi fi-sr-car-alt"></i></div>
                 <p className="text-sm">No images available</p>
               </div>
             </div>
@@ -211,22 +211,22 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
         <div className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1">
-              <span>⛽</span>
+              <span className="mt-1"><i className="fi fi-ss-gas-pump-alt"></i></span>
               {vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1)}
             </span>
             <span className="flex items-center gap-1">
-              <span>⚙️</span>
+              <span className="mt-1"><i className="fi fi-ss-settings"></i></span>
               {vehicle.transmission.charAt(0).toUpperCase() + vehicle.transmission.slice(1)}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1">
-              <span>👥</span>
+              <span className="mt-1"><i className="fi fi-sr-users-alt"></i></span>
               {vehicle.seats} Seats
             </span>
             <span className="flex items-center gap-1">
-              <span>📏</span>
+              <span className="mt-1"><i className="fi fi-sr-engine"></i></span>
               {vehicle.distanceUsed.toLocaleString()} km
             </span>
           </div>

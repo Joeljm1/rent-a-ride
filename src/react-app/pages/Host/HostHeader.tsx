@@ -7,15 +7,15 @@ import client from "../../lib/client";
 export default function HostHeader(): React.ReactElement {
   const session = useContext(AuthContext);
   const [stats, setStats] = useState<StatCard[]>([
-    { label: "Total Vehicles", value: "0", icon: "🚗", color: "bg-blue-500" },
-    { label: "Active Bookings", value: "0", icon: "📅", color: "bg-green-500" },
+    { label: "Total Vehicles", value: "0", icon: <i className="fi fi-sr-car-alt"></i>, color: "bg-blue-500" },
+    { label: "Active Bookings", value: "0", icon: <i className="fi fi-sr-calendar"></i>, color: "bg-green-500" },
     {
       label: "Monthly Earnings",
       value: "₹0",
-      icon: "💰",
+      icon: <i className="fi fi-sr-sack-dollar"></i>,
       color: "bg-yellow-500",
     },
-    { label: "Total Bookings", value: "0", icon: "⭐", color: "bg-purple-500" },
+    { label: "Total Bookings", value: "0", icon: <i className="fi fi-sr-star"></i>, color: "bg-purple-500" },
   ]);
   const [loading, setLoading] = useState(true);
 
@@ -64,25 +64,25 @@ export default function HostHeader(): React.ReactElement {
         {
           label: "Total Vehicles",
           value: totalVehicles.toString(),
-          icon: "🚗",
+          icon: <i className="fi fi-sc-car-alt text-gray-100"></i>,
           color: "bg-blue-500",
         },
         {
           label: "Active Bookings",
           value: activeBookings.toString(),
-          icon: "📅",
+          icon: <i className="fi fi-sr-calendar text-gray-100"></i>,
           color: "bg-green-500",
         },
         {
           label: "Monthly Earnings",
           value: `₹${monthlyEarnings.toLocaleString()}`,
-          icon: "💰",
+          icon: <i className="fi fi-sr-sack-dollar text-gray-100"></i>,
           color: "bg-yellow-500",
         },
         {
           label: "Total Bookings",
           value: totalBookings.toString(),
-          icon: "⭐",
+          icon: <i className="fi fi-sr-star text-gray-100"></i>,
           color: "bg-purple-500",
         },
       ]);
@@ -106,7 +106,7 @@ export default function HostHeader(): React.ReactElement {
         </div>
         <div className="flex items-center space-x-3">
           <Link
-            to="../upload"
+            to="../host/upload"
             className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow"
           >
             + Add Vehicle
@@ -143,7 +143,7 @@ export default function HostHeader(): React.ReactElement {
                 <div
                   className={`flex items-center justify-center w-16 h-16 rounded-xl text-white ${s.color} drop-shadow-xl`}
                 >
-                  <span className="text-2xl">{s.icon}</span>
+                  <span className="text-3xl mt-2">{s.icon}</span>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">

@@ -1,3 +1,5 @@
+import React from "react";
+
 export interface Booking {
   id: number;
   car: string;
@@ -10,14 +12,14 @@ export interface Booking {
 export interface StatCard {
   label: string;
   value: string;
-  icon: string;
+  icon: string | React.ReactNode;
   color?: string;
 }
 
 export interface NavLinkItem {
   to: string;
   label: string;
-  icon?: string;
+  icon?: string | React.ReactNode;
 }
 
 export interface ProfileData {

@@ -134,7 +134,7 @@ export default function Home() {
                           transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
                           className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center"
                         >
-                          <span className="text-white text-2xl font-bold">🚗</span>
+                          <span className="text-white text-2xl font-bold"><i className="fi fi-sr-car-alt"></i></span>
                         </motion.div>
                         <div>
                           <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase">YOUR RIDE</p>

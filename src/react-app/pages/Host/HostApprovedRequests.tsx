@@ -270,7 +270,7 @@ export default function HostApprovedRequests(): React.ReactElement {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center py-20"
               >
-                <div className="text-6xl mb-4">✅</div>
+                <div className="text-6xl mb-4"><i className="fi fi-sr-check-circle"></i></div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   No approved requests
                 </h3>
@@ -359,7 +359,7 @@ export default function HostApprovedRequests(): React.ReactElement {
                                   onClick={() => copyToClipboard(request.gpsId!)}
                                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold"
                                 >
-                                  📋 Copy
+                                  <i className="fi fi-sr-copy-alt mt-1"></i> Copy
                                 </Button>
                               </div>
                             </div>
@@ -430,7 +430,7 @@ export default function HostApprovedRequests(): React.ReactElement {
                                     Processing...
                                   </span>
                                 ) : (
-                                  "🚗 Send Car with GPS"
+                                  <><i className="fi fi-sr-car-alt mt-1"></i> Send Car with GPS</>
                                 )}
                               </Button>
                             ) : (
@@ -443,14 +443,14 @@ export default function HostApprovedRequests(): React.ReactElement {
                                   }}
                                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold tracking-wide"
                                 >
-                                  📍 View GPS Details
+                                  <i className="fi fi-sr-eye mt-1"></i> View GPS Details
                                 </Button>
                                 {request.status !== "completed" && (
                                   <Button
                                     onClick={() => window.location.href = `/host/track/${request.gpsId}`}
                                     className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold tracking-wide"
                                   >
-                                    🗺️ Track Vehicle
+                                    <i className="fi fi-sr-map-location-track mt-1"></i> Track Vehicle
                                   </Button>
                                 )}
                                 {request.carStatus === "renting" && (
@@ -465,7 +465,7 @@ export default function HostApprovedRequests(): React.ReactElement {
                                         Completing...
                                       </span>
                                     ) : (
-                                      "✅ Complete Rental"
+                                      <><i className="fi fi-sr-check-circle mt-1"></i> Complete Rental</>
                                     )}
                                   </Button>
                                 )}
@@ -501,7 +501,7 @@ export default function HostApprovedRequests(): React.ReactElement {
               className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6"
             >
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                🔐 Set GPS Password
+                <i className="fi fi-sr-access-control mt-1"></i> Set GPS Password
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Create a secure password for GPS tracking. This password will be shared
@@ -573,7 +573,7 @@ export default function HostApprovedRequests(): React.ReactElement {
               className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6"
             >
               <div className="text-center">
-                <div className="text-6xl mb-4">✅</div>
+                <div className="text-6xl mb-4"><i className="fi fi-sr-check-circle"></i></div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   GPS Tracking Enabled!
                 </h3>
@@ -592,7 +592,7 @@ export default function HostApprovedRequests(): React.ReactElement {
                     onClick={() => copyToClipboard(generatedGpsId)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
                   >
-                    📋 Copy GPS ID
+                    <i className="fi fi-sr-copy-alt mt-1"></i> Copy GPS ID
                   </Button>
                 </div>
                 <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 p-4 rounded mb-6 text-left">
@@ -607,14 +607,14 @@ export default function HostApprovedRequests(): React.ReactElement {
                       onClick={() => window.location.href = `/host/track/${generatedGpsId}`}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
                     >
-                      🗺️ Track Vehicle
+                      <i className="fi fi-sr-map-location-track mt-1"></i> Track Vehicle
                     </Button>
                   )}
                   <Button
                     onClick={closeGpsIdModal}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold"
                   >
-                    Done
+                    <i className="fi fi-sr-check-circle mt-1"></i>Done
                   </Button>
                 </div>
               </div>

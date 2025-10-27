@@ -226,7 +226,7 @@ export default function AIChat(): React.ReactElement {
               <div className="rounded-xl p-5 h-full overflow-y-auto bg-gray-50/80 dark:bg-gray-900/50">
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
-                    🚗 Recommended
+                    <i className="fi fi-sr-car-alt"></i> Recommended
                   </h2>
                   {recommendations.length > 0 && (
                     <span className="px-3 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">

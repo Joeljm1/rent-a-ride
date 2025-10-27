@@ -72,7 +72,7 @@ export function VehicleFilters({ filters, setFilters }: VehicleFiltersProps) {
     <div className="bg-card border rounded-lg p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold flex items-center gap-2">
-          <span>🔍</span>
+          <span className="mt-1"><i className="fi fi-sr-filter mt-1"></i></span>
           Filter Vehicles
           {hasActiveFilters && (
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">

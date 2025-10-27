@@ -4,6 +4,7 @@ import { createAuth } from "../lib/auth";
 interface AvailableCars {
   id: number;
   distanceUsed: number;
+  description: string | null;
   brand: string;
   model: string;
   year: number;

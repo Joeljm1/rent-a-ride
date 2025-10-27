@@ -270,7 +270,7 @@ export default function ManageVehicles(): React.ReactElement {
               </p>
             </div>
             <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center text-2xl">
-              🚗
+              <span className="mt-1"><i className="fi fi-sr-car-alt mt-1"></i></span>
             </div>
           </div>
         </div>
@@ -286,7 +286,7 @@ export default function ManageVehicles(): React.ReactElement {
               </p>
             </div>
             <div className="w-14 h-14 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center text-2xl">
-              ✓
+              <span className="mt-1"><i className="fi fi-sr-check"></i></span>
             </div>
           </div>
         </div>
@@ -302,7 +302,7 @@ export default function ManageVehicles(): React.ReactElement {
               </p>
             </div>
             <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-2xl">
-              🔑
+              <span className="mt-1"><i className="fi fi-sr-rent-signal"></i></span>
             </div>
           </div>
         </div>
@@ -318,7 +318,7 @@ export default function ManageVehicles(): React.ReactElement {
               </p>
             </div>
             <div className="w-14 h-14 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center text-2xl">
-              ⚠️
+              <span className="mt-1"><i className="fi fi-sr-triangle-warning"></i></span>
             </div>
           </div>
         </div>
@@ -337,8 +337,8 @@ export default function ManageVehicles(): React.ReactElement {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2.5 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                🔍
+              <span className="absolute left-3 top-1/2 mt-0.5 -translate-y-1/2 text-gray-400">
+                <i className="fi fi-sr-search"></i>
               </span>
             </div>
           </div>
@@ -405,7 +405,7 @@ export default function ManageVehicles(): React.ReactElement {
       {filteredVehicles.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 p-12 rounded-xl shadow-lg text-center">
           <div className="flex flex-col items-center justify-center">
-            <span className="text-6xl mb-4">🚗</span>
+            <span className="text-6xl mb-4"><i className="fi fi-sr-car-alt mt-1"></i></span>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               {vehicles.length === 0 ? "No vehicles yet" : "No vehicles found"}
             </h3>
@@ -445,7 +445,7 @@ export default function ManageVehicles(): React.ReactElement {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-6xl">
-                      🚗
+                      <span className="mt-1"><i className="fi fi-sr-car-alt"></i></span>
                     </div>
                   )}
                   <div className="absolute top-3 right-3">
@@ -559,7 +559,7 @@ export default function ManageVehicles(): React.ReactElement {
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-2xl">
-                                🚗
+                                <i className="fi fi-sr-car-alt"></i>
                               </div>
                             )}
                           </div>

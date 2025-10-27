@@ -194,7 +194,7 @@ export default function HostPendingRequests(): React.ReactElement {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center py-20"
               >
-                <div className="text-6xl mb-4">📋</div>
+                <div className="text-6xl mb-4"><i className="fi fi-sr-suggestion"></i></div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   No pending requests
                 </h3>

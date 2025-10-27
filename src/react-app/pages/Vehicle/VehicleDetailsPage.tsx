@@ -223,7 +223,7 @@ export default function VehicleDetailsPage() {
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
                                   <div className="text-center">
-                                    <div className="text-6xl mb-4">🚗</div>
+                                    <div className="text-6xl mb-4"><i className="fi fi-sr-car-alt"></i></div>
                                     <p className="text-lg">Image unavailable</p>
                                   </div>
                                 </div>
@@ -248,7 +248,7 @@ export default function VehicleDetailsPage() {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
                     <div className="text-center">
-                      <div className="text-6xl mb-4">🚗</div>
+                      <div className="text-6xl mb-4"><i className="fi fi-sr-car-alt"></i></div>
                       <p className="text-lg">No images available</p>
                     </div>
                   </div>
@@ -283,7 +283,7 @@ export default function VehicleDetailsPage() {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <span className="text-2xl">⛽</span>
+                  <span className="text-3xl mt-1"><i className="fi fi-ss-gas-pump-alt"></i></span>
                   <div>
                     <p className="text-sm text-muted-foreground">Fuel Type</p>
                     <p className="font-semibold">{vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1)}</p>
@@ -291,7 +291,7 @@ export default function VehicleDetailsPage() {
                 </div>
                 
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <span className="text-2xl">⚙️</span>
+                  <span className="text-3xl mt-1"><i className="fi fi-ss-settings"></i></span>
                   <div>
                     <p className="text-sm text-muted-foreground">Transmission</p>
                     <p className="font-semibold">{vehicle.transmission.charAt(0).toUpperCase() + vehicle.transmission.slice(1)}</p>
@@ -299,7 +299,7 @@ export default function VehicleDetailsPage() {
                 </div>
                 
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <span className="text-2xl">👥</span>
+                  <span className="text-3xl mt-1"><i className="fi fi-sr-users-alt"></i></span>
                   <div>
                     <p className="text-sm text-muted-foreground">Seating</p>
                     <p className="font-semibold">{vehicle.seats} Seats</p>
@@ -307,7 +307,7 @@ export default function VehicleDetailsPage() {
                 </div>
                 
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <span className="text-2xl">📏</span>
+                  <span className="text-3xl mt-1"><i className="fi fi-sr-engine"></i></span>
                   <div>
                     <p className="text-sm text-muted-foreground">Mileage</p>
                     <p className="font-semibold">{vehicle.distanceUsed.toLocaleString()} km</p>
@@ -318,29 +318,17 @@ export default function VehicleDetailsPage() {
               <Separator />
 
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold">Vehicle Features</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <span className="flex items-center gap-2">
-                      <span>🔧</span>
-                      Well Maintained
-                    </span>
-                    <Badge variant="secondary">Verified</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <span className="flex items-center gap-2">
-                      <span>🛡️</span>
-                      Insurance Included
-                    </span>
-                    <Badge variant="secondary">Covered</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <span className="flex items-center gap-2">
-                      <span>📱</span>
-                      24/7 Support
-                    </span>
-                    <Badge variant="secondary">Available</Badge>
-                  </div>
+                <h3 className="text-xl font-semibold"><i className="fi fi-sr-edit mr-2"></i>Vehicle Description</h3>
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  {vehicle.description ? (
+                    <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                      {vehicle.description}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground italic">
+                      No description available for this vehicle.
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>

@@ -142,8 +142,8 @@ export default function FileUploader() {
       <div className="max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
-            <span className="text-3xl">🚗</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg">
+            <span className="text-3xl mt-2"><i className="fi fi-sr-car-alt text-black dark:text-white"></i></span>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             Add New Car
@@ -159,7 +159,7 @@ export default function FileUploader() {
             {/* Vehicle Information Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-xl">📋</span>
+                <span className="text-xl mt-1"><i className="fi fi-sr-info"></i></span>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Vehicle Information
                 </h2>
@@ -235,7 +235,7 @@ export default function FileUploader() {
             {/* Specifications Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-xl">⚙️</span>
+                <span className="text-xl mt-1"><i className="fi fi-sr-settings"></i></span>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Specifications
                 </h2>
@@ -276,8 +276,8 @@ export default function FileUploader() {
                   className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none"
                 >
                   <span className="flex items-center space-x-2">
-                    <span>📍</span>
-                    <span>GPS Navigation System Available</span>
+                    <span className="mt-1"><i className="fi fi-sr-map-marker"></i></span>
+                    <span className="mt-1">GPS Navigation System Available</span>
                   </span>
                 </label>
               </div>
@@ -286,7 +286,7 @@ export default function FileUploader() {
             {/* Description Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-xl">✍️</span>
+                <span className="text-xl mt-1"><i className="fi fi-sr-drawer-alt"></i></span>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Description
                 </h2>
@@ -306,7 +306,7 @@ export default function FileUploader() {
             {/* Images Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-xl">📸</span>
+                <span className="text-xl mt-1"><i className="fi fi-sr-camera"></i></span>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Images
                 </h2>

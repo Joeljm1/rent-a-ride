@@ -32,7 +32,7 @@ export function VehicleGrid({
   if (vehicles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="text-6xl mb-4">🚗</div>
+        <div className="text-6xl mb-4"><i className="fi fi-sr-car-alt"></i></div>
         <h3 className="text-lg font-semibold mb-2">No vehicles found</h3>
         <p className="text-muted-foreground text-center max-w-md">
           We couldn't find any vehicles matching your criteria. Try adjusting your filters or check back later.

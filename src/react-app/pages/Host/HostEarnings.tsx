@@ -76,25 +76,25 @@ export default function HostEarnings(): React.ReactElement {
     {
       label: "Total Earnings",
       value: `₹${stats.totalEarnings.toLocaleString()}`,
-      icon: "💰",
+      icon: <i className="fi fi-sr-sack-dollar"></i>,
       color: "bg-green-500",
     },
     {
       label: "This Month",
       value: `₹${stats.monthlyEarnings.toLocaleString()}`,
-      icon: "📅",
+      icon: <i className="fi fi-sr-calendar"></i>,
       color: "bg-blue-500",
     },
     {
       label: "Pending Money To Receive",
       value: `₹${stats.pendingPayout.toLocaleString()}`,
-      icon: "⏳",
+      icon: <i className="fi fi-sr-duration-alt"></i>,
       color: "bg-yellow-500",
     },
     {
       label: "Avg. per Booking",
       value: `₹${stats.averagePerBooking.toLocaleString()}`,
-      icon: "📊",
+      icon: <i className="fi fi-bs-chart-histogram"></i>,
       color: "bg-purple-500",
     },
   ];
@@ -269,7 +269,7 @@ export default function HostEarnings(): React.ReactElement {
           <div key={i} className="p-6 rounded-xl bg-white dark:bg-gray-800 shadow-lg">
             <div className="flex items-center mb-2">
               <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}>
-                {stat.icon}
+                <span className="mt-2">{stat.icon}</span>
               </div>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>

@@ -170,21 +170,21 @@ export default function Dashboard() {
                 to="../host/upload"
                 className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-lg transition-all shadow-md hover:shadow-lg font-semibold"
               >
-                <span className="text-xl">➕</span>
+                <span className="text-xl"><i className="fi fi-sr-square-plus"></i></span>
                 <span>Add New Vehicle</span>
               </Link>
               <Link
                 to="../vehicles"
                 className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg transition-all shadow-md hover:shadow-lg font-semibold"
               >
-                <span className="text-xl">🚗</span>
+                <span className="text-xl"><i className="fi fi-sr-car-alt"></i></span>
                 <span>Manage Vehicles</span>
               </Link>
               <Link
                 to="../host/bookings"
                 className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg transition-all shadow-md hover:shadow-lg font-semibold"
               >
-                <span className="text-xl">📅</span>
+                <span className="text-xl"><i className="fi fi-sr-calendar"></i></span>
                 <span>Review Bookings</span>
               </Link>
             </div>

@@ -7,14 +7,14 @@ export default function HostLayout(): React.ReactElement {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks: NavLinkItem[] = [
-    { to: "/host", label: "Dashboard", icon: "📊" },
-    { to: "vehicles", label: "My Vehicles", icon: "🚗" },
-    { to: "upload", label: "Add Vehicle", icon: "➕" },
-    { to: "bookings", label: "Bookings", icon: "📅" },
-    { to: "pending-requests", label: "Pending Requests", icon: "📋" },
-    { to: "approved-requests", label: "Approved Requests", icon: "✅" },
-    { to: "earnings", label: "Earnings", icon: "💰" },
-    { to: "profile", label: "Profile", icon: "👤" },
+    { to: "/host", label: "Dashboard", icon: <i className="fi fi-sr-dashboard-monitor"></i> },
+    { to: "vehicles", label: "My Vehicles", icon: <i className="fi fi-sr-car-alt"></i> },
+    { to: "upload", label: "Add Vehicle", icon: <i className="fi fi-sr-add"></i> },
+    { to: "bookings", label: "Bookings", icon: <i className="fi fi-sr-books"></i> },
+    { to: "pending-requests", label: "Pending Requests", icon: <i className ="fi fi-sr-pending"></i> },
+    { to: "approved-requests", label: "Approved Requests", icon: <i className="fi fi-sr-checkbox"></i> },
+    { to: "earnings", label: "Earnings", icon: <i className="fi fi-sr-sack-dollar"></i> },
+    { to: "profile", label: "Profile", icon: <i className="fi fi-sr-user"></i> },
   ];
   return (
     <div className="flex bg-gray-100 dark:bg-gray-900">
@@ -41,7 +41,7 @@ export default function HostLayout(): React.ReactElement {
                   }`
                 }
               >
-                <span className="mr-3 text-lg">{link.icon}</span>
+                <span className="mr-3 mt-1 text-lg">{link.icon}</span>
                 {link.label}
               </NavLink>
             ))}
