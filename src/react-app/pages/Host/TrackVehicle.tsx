@@ -26,6 +26,11 @@ const startIcon = L.divIcon({
   popupAnchor: [0, -10],
 });
 
+interface VehicleLocation {
+  lat: number;
+  lng: number;
+  timestamp: string;
+}
 
 interface HistoryPoint {
   lat: number;
@@ -44,7 +49,7 @@ function ChangeView({ center }: { center: [number, number] }) {
 export default function TrackVehicle(): React.ReactElement {
   const { gpsId } = useParams<{ gpsId: string }>();
   const navigate = useNavigate();
-  const [location, setLocation] = useState<HistoryPoint | null>(null);
+  const [location, setLocation] = useState<VehicleLocation | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected" | "error"
@@ -129,13 +134,6 @@ export default function TrackVehicle(): React.ReactElement {
         ws.onmessage = (event) => {
           console.log("Received GPS data:", event.data);
           const message = event.data as string;
-          const latMatch = message.match(/Lat:([-\d.]+|null)/);
-          const longMatch = message.match(/Long:([-\d.]+|null)/);
-          const timeMatch = message.match(/Time:([-\d.]+|null)/);
-          
-          console.log("Parsed lat:", latMatch?.[1], "lng:", longMatch?.[1], "time:", timeMatch?.[1]);
-          
-          if (latMatch && longMatch && timeMatch) {
           const latMatch = message.match(/Lat:([-\d.]+)/);
           const longMatch = message.match(/Long:([-\d.]+)/);
           const timeMatch = message.match(/Time:([-\d.]+)/);
@@ -144,12 +142,6 @@ export default function TrackVehicle(): React.ReactElement {
           
           if (latMatch && longMatch && timeMatch) {
             const lat = parseFloat(latMatch[1]);
-            const long = parseFloat(longMatch[1]);
-            const time = parseInt(timeMatch[1]);
-            
-            if (!isNaN(lat) && !isNaN(long) && !isNaN(time)) {
-              console.log("Setting location:", { lat, long, time });
-              setLocation({ lat, long, time });
             const lng = parseFloat(longMatch[1]);
             const timestamp = new Date(parseInt(timeMatch[1]) * 1000);
             
@@ -173,19 +165,19 @@ export default function TrackVehicle(): React.ReactElement {
                 return prevRoute;
               });
             } else {
-              console.warn("Invalid lat/long/time values:", lat, long, time);
-              // If message contains null values, show default location
-              if (message.includes("null")) {
-                console.log("No GPS data yet, using default location");
-                setLocation({
-                  lat: 28.6139,
-                  long: 77.209,
-                  time: Math.floor(Date.now() / 1000),
-                });
-              }
+              console.warn("Invalid lat/lng values:", lat, lng);
             }
           } else {
             console.warn("Could not parse GPS data. Message:", message);
+            // If message is "Lat:null Long:null", show default location
+            if (message.includes("null")) {
+              console.log("No GPS data yet, using default location");
+              setLocation({
+                lat: 28.6139,
+                lng: 77.209,
+                timestamp: new Date().toISOString(),
+              });
+            }
           }
         };
         ws.onerror = (error) => {
@@ -364,7 +356,7 @@ export default function TrackVehicle(): React.ReactElement {
                   Longitude
                 </p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white font-mono">
-                  {location.long.toFixed(6)}
+                  {location.lng.toFixed(6)}
                 </p>
               </div>
               <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
@@ -372,7 +364,7 @@ export default function TrackVehicle(): React.ReactElement {
                   Last Update
                 </p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">
-                  {new Date(location.time * 1000).toLocaleTimeString()}
+                  {new Date(location.timestamp).toLocaleTimeString()}
                 </p>
               </div>
               <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
@@ -394,7 +386,7 @@ export default function TrackVehicle(): React.ReactElement {
           <Card className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="h-[600px] rounded-lg overflow-hidden">
               <MapContainer
-                center={[location.lat, location.long]}
+                center={[location.lat, location.lng]}
                 zoom={13}
                 scrollWheelZoom={false}
                 style={{ height: "100%", width: "100%" }}
@@ -445,7 +437,6 @@ export default function TrackVehicle(): React.ReactElement {
                     }}
                   />
                 )}
-                <Marker position={[location.lat, location.long]} icon={carIcon}>
                 
                 {/* Current location marker */}
                 <Marker position={[location.lat, location.lng]} icon={carIcon}>
@@ -456,10 +447,10 @@ export default function TrackVehicle(): React.ReactElement {
                         <strong>Lat:</strong> {location.lat.toFixed(6)}°
                       </p>
                       <p className="text-sm">
-                        <strong>Lng:</strong> {location.long.toFixed(6)}°
+                        <strong>Lng:</strong> {location.lng.toFixed(6)}°
                       </p>
                       <p className="text-xs text-gray-600 mt-2">
-                        Updated: {new Date(location.time * 1000).toLocaleString()}
+                        Updated: {new Date(location.timestamp).toLocaleString()}
                       </p>
                       {lastUpdateTime && (
                         <p className="text-xs text-blue-600 mt-1">
@@ -469,7 +460,6 @@ export default function TrackVehicle(): React.ReactElement {
                     </div>
                   </Popup>
                 </Marker>
-                <ChangeView center={[location.lat, location.long]} />
                 
                 {/* Accuracy circle for current position */}
                 <Circle
@@ -487,18 +477,6 @@ export default function TrackVehicle(): React.ReactElement {
               </MapContainer>
             </div>
           </Card>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mt-6 text-center"
-        >
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {" "}
-            Using WebSocket for real-time GPS tracking via Cloudflare Durable
-            Objects
-          </p>
         </motion.div>
       </div>
     </div>
