@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import type { EarningsStats, Transaction, PayoutInfo } from "./types";
+import type { EarningsStats, Transaction } from "./types";
 import client from "../../lib/client";
 
 export default function HostEarnings(): React.ReactElement {
@@ -12,11 +12,6 @@ export default function HostEarnings(): React.ReactElement {
     totalBookings: 0,
   });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [payoutInfo, setPayoutInfo] = useState<PayoutInfo>({
-    nextPayoutDate: null,
-    pendingAmount: 0,
-    payoutMethod: "Bank Transfer",
-  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,11 +45,10 @@ export default function HostEarnings(): React.ReactElement {
 
       const statsData = await statsRes.json();
       const transactionsData = await transactionsRes.json();
-      const payoutData = await payoutRes.json();
 
       setStats(statsData);
       setTransactions((transactionsData.transactions || []) as Transaction[]);
-      setPayoutInfo(payoutData);
+
     } catch (err) {
       console.error("Error fetching earnings:", err);
       setError("Failed to load earnings data. Please try again later.");

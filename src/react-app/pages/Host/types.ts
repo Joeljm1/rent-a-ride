@@ -109,12 +109,6 @@ export interface EarningsStats {
   totalBookings: number;
 }
 
-export interface PayoutInfo {
-  nextPayoutDate: string | null;
-  pendingAmount: number;
-  payoutMethod: string;
-}
-
 export interface EditFormData {
   brand: string;
   model: string;
