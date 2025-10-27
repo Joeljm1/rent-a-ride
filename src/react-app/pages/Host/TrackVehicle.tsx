@@ -17,11 +17,6 @@ const carIcon = L.divIcon({
   popupAnchor: [0, -40],
 });
 
-interface VehicleLocation {
-  lat: number;
-  lng: number;
-  timestamp: string;
-}
 
 interface HistoryPoint {
   lat: number;
@@ -40,7 +35,7 @@ function ChangeView({ center }: { center: [number, number] }) {
 export default function TrackVehicle(): React.ReactElement {
   const { gpsId } = useParams<{ gpsId: string }>();
   const navigate = useNavigate();
-  const [location, setLocation] = useState<VehicleLocation | null>(null);
+  const [location, setLocation] = useState<HistoryPoint | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected" | "error"
@@ -123,29 +118,34 @@ export default function TrackVehicle(): React.ReactElement {
         ws.onmessage = (event) => {
           console.log("Received GPS data:", event.data);
           const message = event.data as string;
-          const latMatch = message.match(/Lat:([-\d.]+)/);
-          const longMatch = message.match(/Long:([-\d.]+)/);
-          console.log("Parsed lat:", latMatch?.[1], "lng:", longMatch?.[1]);
-          if (latMatch && longMatch) {
+          const latMatch = message.match(/Lat:([-\d.]+|null)/);
+          const longMatch = message.match(/Long:([-\d.]+|null)/);
+          const timeMatch = message.match(/Time:([-\d.]+|null)/);
+          
+          console.log("Parsed lat:", latMatch?.[1], "lng:", longMatch?.[1], "time:", timeMatch?.[1]);
+          
+          if (latMatch && longMatch && timeMatch) {
             const lat = parseFloat(latMatch[1]);
-            const lng = parseFloat(longMatch[1]);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              console.log("Setting location:", { lat, lng });
-              setLocation({ lat, lng, timestamp: new Date().toISOString() });
+            const long = parseFloat(longMatch[1]);
+            const time = parseInt(timeMatch[1]);
+            
+            if (!isNaN(lat) && !isNaN(long) && !isNaN(time)) {
+              console.log("Setting location:", { lat, long, time });
+              setLocation({ lat, long, time });
             } else {
-              console.warn("Invalid lat/lng values:", lat, lng);
+              console.warn("Invalid lat/long/time values:", lat, long, time);
+              // If message contains null values, show default location
+              if (message.includes("null")) {
+                console.log("No GPS data yet, using default location");
+                setLocation({
+                  lat: 28.6139,
+                  long: 77.209,
+                  time: Math.floor(Date.now() / 1000),
+                });
+              }
             }
           } else {
             console.warn("Could not parse GPS data. Message:", message);
-            // If message is "Lat:null Long:null", show default location
-            if (message.includes("null")) {
-              console.log("No GPS data yet, using default location");
-              setLocation({
-                lat: 28.6139,
-                lng: 77.209,
-                timestamp: new Date().toISOString(),
-              });
-            }
           }
         };
         ws.onerror = (error) => {
@@ -324,7 +324,7 @@ export default function TrackVehicle(): React.ReactElement {
                   Longitude
                 </p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white font-mono">
-                  {location.lng.toFixed(6)}
+                  {location.long.toFixed(6)}
                 </p>
               </div>
               <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
@@ -332,7 +332,7 @@ export default function TrackVehicle(): React.ReactElement {
                   Last Update
                 </p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">
-                  {new Date(location.timestamp).toLocaleTimeString()}
+                  {new Date(location.time * 1000).toLocaleTimeString()}
                 </p>
               </div>
               <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
@@ -354,7 +354,7 @@ export default function TrackVehicle(): React.ReactElement {
           <Card className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="h-[600px] rounded-lg overflow-hidden">
               <MapContainer
-                center={[location.lat, location.lng]}
+                center={[location.lat, location.long]}
                 zoom={13}
                 scrollWheelZoom={false}
                 style={{ height: "100%", width: "100%" }}
@@ -375,7 +375,7 @@ export default function TrackVehicle(): React.ReactElement {
                     }}
                   />
                 )}
-                <Marker position={[location.lat, location.lng]} icon={carIcon}>
+                <Marker position={[location.lat, location.long]} icon={carIcon}>
                   <Popup>
                     <div className="text-center">
                       <p className="font-bold text-lg mb-2">
@@ -385,15 +385,15 @@ export default function TrackVehicle(): React.ReactElement {
                         <strong>Lat:</strong> {location.lat.toFixed(6)}°
                       </p>
                       <p className="text-sm">
-                        <strong>Lng:</strong> {location.lng.toFixed(6)}°
+                        <strong>Lng:</strong> {location.long.toFixed(6)}°
                       </p>
                       <p className="text-xs text-gray-600 mt-2">
-                        Updated: {new Date(location.timestamp).toLocaleString()}
+                        Updated: {new Date(location.time * 1000).toLocaleString()}
                       </p>
                     </div>
                   </Popup>
                 </Marker>
-                <ChangeView center={[location.lat, location.lng]} />
+                <ChangeView center={[location.lat, location.long]} />
               </MapContainer>
             </div>
           </Card>

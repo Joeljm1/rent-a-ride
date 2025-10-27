@@ -30,7 +30,8 @@ export class GPS extends DurableObject {
     const [client, server] = Object.values(webSockPair);
 
     this.ctx.acceptWebSocket(server);
-    if (!this.lat || !this.long) {
+    // Always load the latest position from database if not in memory or if time is null
+    if (!this.lat || !this.long || !this.time) {
       const cursor = this.sql.exec(
         "SELECT lat,lon,time from GPS ORDER BY time DESC LIMIT 1",
       );
@@ -48,6 +49,7 @@ export class GPS extends DurableObject {
           ) {
             this.lat = lat;
             this.long = long;
+            // Use the timestamp from database, not current time
             this.time = new Date(time * 1000);
           }
         }
