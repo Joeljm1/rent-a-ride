@@ -144,13 +144,13 @@ const GPSRouter = new Hono<{
   })
   .get(
     "/history/:reqId",
-    zValidator("param",z.object({reqId:z.coerce.number()})),
+    zValidator("param", z.object({ reqId: z.coerce.number() })),
     async (c) => {
-      console.log("Reached")
+      console.log("Reached");
       try {
         const user = c.get("user");
         const db = c.get("db");
-        const {reqId}  = c.req.valid("param")
+        const { reqId } = c.req.valid("param");
         if (user === null) {
           return c.json({ error: "UnAuthorized" }, 401);
         }
@@ -173,6 +173,8 @@ const GPSRouter = new Hono<{
             401,
           );
         }
+        // may cause problems
+        //@ts-ignore
         const id = c.env.GPS.idFromName(gpsId);
         const stub = c.env.GPS.get(id);
         const history = await stub.getHistory();
