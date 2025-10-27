@@ -249,6 +249,7 @@ app.post(
         let whereClause = "";
 
         // Priority 1: Check for fuel types (most specific)
+
         if (
           lowerMessage.includes("electric") ||
           lowerMessage.match(/\bev\b/) ||
@@ -262,6 +263,8 @@ app.post(
           lowerMessage.includes("gasoline")
         ) {
           whereClause = "fuel_type LIKE '%petrol%'";
+        } else if (lowerMessage.includes("hybrid")) {
+          whereClause = "fuel_type LIKE '%hybrid%'";
         }
         // Priority 2: Check for brands
         else if (lowerMessage.includes("bmw")) {
@@ -276,6 +279,20 @@ app.post(
           whereClause = "brand LIKE '%chevrolet%'";
         } else if (lowerMessage.includes("mazda")) {
           whereClause = "brand LIKE '%mazda%'";
+        } else if (lowerMessage.includes("ferrari")) {
+          whereClause = "brand LIKE '%ferrari%'";
+        } else if (lowerMessage.includes("lamborghini")) {
+          whereClause = "brand LIKE '%lamborghini%'";
+        } else if (lowerMessage.includes("porsche")) {
+          whereClause = "brand LIKE '%porsche%'";
+        } else if (lowerMessage.includes("maruthi")) {
+          whereClause = "brand LIKE '%maruthi%'";
+        } else if (lowerMessage.includes("hyundai")) {
+          whereClause = "brand LIKE '%hyundai%'";
+        } else if (lowerMessage.includes("benz")) {
+          whereClause = "brand LIKE '%benz%'";
+        } else if (lowerMessage.includes("audi")) {
+          whereClause = "brand LIKE '%audi%";
         }
         // Priority 3: Check for vehicle types
         else if (lowerMessage.includes("suv")) {
@@ -289,8 +306,17 @@ app.post(
         ) {
           whereClause =
             "(description LIKE '%truck%' OR description LIKE '%pickup%' OR model LIKE '%f-150%')";
+        } else if (lowerMessage.includes("date")) {
+          whereClause = "(description LIKE '%date%')";
+        } else if (lowerMessage.includes("luxury")) {
+          whereClause = "(description LIKE '%luxury%')";
+        } else if (lowerMessage.includes("budget")) {
+          whereClause = "(description LIKE '%budget%')";
+        } else if (lowerMessage.includes("family")) {
+          whereClause = "(description LIKE '%family%')";
+        } else if (lowerMessage.includes("sports")) {
+          whereClause = "(description LIKE '%sports%')";
         }
-
         if (whereClause) {
           const { results } = await c.env.DB.prepare(
             `SELECT id, brand, model, year, description, fuel_type as fuelType, transmission, seats, price_per_day as pricePerDay 
