@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import HostProfileHeader from "./HostProfile/HostProfileHeader";
 import ProfileStats from "./HostProfile/ProfileStats";
 import TabNavigation from "./HostProfile/TabNavigation";
@@ -8,54 +8,103 @@ import SecurityTab from "./HostProfile/SecurityTab";
 import PreferenceTab from "./HostProfile/PreferenceTab";
 import VerificationTab from "./HostProfile/VerificationTab";
 import type { ProfileData } from "./types";
+import BaseURL from "@/../../BaseURL.ts";
 
 export default function HostProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [loading, setLoading] = useState(true);
   
   const [profileData, setProfileData] = useState<ProfileData>({
     // Personal Information
-    firstName: "Karthik",
-    lastName: "Das",
-    email: "Karthik.Das@email.com",
-    phone: "+91 1234567890",
-    dateOfBirth: "2004-01-15",
-    gender: "Male",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    gender: "",
     language: "English",
     
     // Address
-    address: "Shiganshina",
-    city: "Kozhikode",
-    state: "Kerala",
-    zipCode: "6732890",
-    country: "India",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
     
     // Host Information
-    hostSince: "2022-03-15",
+    hostSince: "",
     responseTime: "Within 1 hour",
     responseRate: "98%",
-    bio: "Passionate car enthusiast with 5+ years of hosting experience. I ensure all my vehicles are well-maintained and provide excellent customer service.",
+    bio: "",
     
     // Business Details
-    businessName: "RENTIGO",
-    gstNumber: "29ABCDE1234F1Z5",
-    panNumber: "ABCDE1234F",
-    bankAccount: "****6789",
-    ifscCode: "HDFC0001234",
+    businessName: "",
+    gstNumber: "",
+    panNumber: "",
+    bankAccount: "",
+    ifscCode: "",
     
     // Preferences
-    instantBook: true,
+    instantBook: false,
     minRentalPeriod: "4 hours",
     maxRentalPeriod: "30 days",
     cancellationPolicy: "Moderate",
     
     // Verification Status
-    emailVerified: true,
-    phoneVerified: true,
-    identityVerified: true,
+    emailVerified: false,
+    phoneVerified: false,
+    identityVerified: false,
     addressVerified: false,
-    backgroundCheck: true
+    backgroundCheck: false
   });
+
+  // Fetch profile data from database
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${BaseURL}/api/profile`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+
+        const data = await response.json() as {
+          id: string;
+          name: string;
+          email: string;
+          emailVerified: boolean;
+          image: string | null;
+          createdAt: string;
+        };
+        
+        // Split name into first and last name
+        const nameParts = data.name.split(" ");
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        setProfileData((prev) => ({
+          ...prev,
+          firstName,
+          lastName,
+          email: data.email,
+          emailVerified: data.emailVerified || false,
+          hostSince: data.createdAt
+            ? new Date(data.createdAt).toISOString().split("T")[0]
+            : "",
+        }));
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
@@ -72,6 +121,17 @@ export default function HostProfile() {
       [name]: value
     }));
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

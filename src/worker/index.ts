@@ -8,6 +8,7 @@ import carReq from "./rental.ts";
 import earningsApp from "./earnings";
 import aiChatApp from "./ai-chat";
 import GPSRouter from "./GPS";
+import profileRouter from "./profile";
 import { GPS } from "./GPSDurObj.ts";
 import rent from "./rental.ts";
 import type { CloudflareBindings } from "./env";
@@ -75,6 +76,7 @@ const app = new Hono<{ Bindings: CloudflareBindings; Variables: Variables }>()
   .route("/api/ai", aiChatApp)
   .route("/api/gps", GPSRouter)
   .route("/api/rent", rent)
+  .route("/api/profile", profileRouter)
   .onError((err, c) => {
     console.error(`${err}`);
     return c.json({ message: "Internal Server Error" }, 500);
