@@ -1,22 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion } from "motion/react";
 import BaseURL from "@/../../BaseURL.ts";
-
-// delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
 
 // Custom car icon using Flaticon CSS
 const carIcon = L.divIcon({
@@ -31,6 +21,12 @@ interface VehicleLocation {
   lat: number;
   lng: number;
   timestamp: string;
+}
+
+interface HistoryPoint {
+  lat: number;
+  long: number;
+  time: number;
 }
 
 function ChangeView({ center }: { center: [number, number] }) {
@@ -49,7 +45,66 @@ export default function TrackVehicle(): React.ReactElement {
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected" | "error"
   >("connecting");
+  const [routeHistory, setRouteHistory] = useState<[number, number][]>([]);
+  const [showHistory, setShowHistory] = useState<boolean>(true);
+  const [reqId, setReqId] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+
+  // Fetch route history
+  useEffect(() => {
+    if (!reqId) return;
+    
+    const fetchHistory = async () => {
+      try {
+        const response = await fetch(`${BaseURL}/api/gps/history/${reqId}`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          console.error("Failed to fetch route history");
+          return;
+        }
+
+        const data = await response.json() as { history: HistoryPoint[] };
+        if (data.history && data.history.length > 0) {
+          const route = data.history.map((point) => [point.lat, point.long] as [number, number]);
+          setRouteHistory(route);
+          console.log("Route history loaded:", route.length, "points");
+        }
+      } catch (err) {
+        console.error("Error fetching route history:", err);
+      }
+    };
+
+    fetchHistory();
+  }, [reqId]);
+
+  // Fetch reqId from gpsId
+  useEffect(() => {
+    if (!gpsId) return;
+
+    const fetchReqId = async () => {
+      try {
+        // We'll need to fetch the reqId from the backend
+        // For now, we can get it from the approvedRequests endpoint
+        const response = await fetch(`${BaseURL}/api/rent/approvedRequests`, {
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const requests = await response.json() as Array<{ reqId: number; gpsId: string | null }>;
+          const request = requests.find((req) => req.gpsId === gpsId);
+          if (request) {
+            setReqId(request.reqId);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching reqId:", err);
+      }
+    };
+
+    fetchReqId();
+  }, [gpsId]);
 
   useEffect(() => {
     if (!gpsId) return;
@@ -213,13 +268,23 @@ export default function TrackVehicle(): React.ReactElement {
                 GPS ID: <code className="font-mono text-sm">{gpsId}</code>
               </p>
             </div>
-            <Button
-              onClick={() => navigate(-1)}
-              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-6 py-2 rounded-lg font-semibold"
-            >
-              {" "}
-              Back
-            </Button>
+            <div className="flex gap-3">
+              {routeHistory.length > 0 && (
+                <Button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className={`${showHistory ? "bg-purple-600 hover:bg-purple-700" : "bg-gray-400 hover:bg-gray-500"} text-white px-6 py-2 rounded-lg font-semibold`}
+                >
+                  {showHistory ? "🗺️ Hide Route" : "🗺️ Show Route"} ({routeHistory.length})
+                </Button>
+              )}
+              <Button
+                onClick={() => navigate(-1)}
+                className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-6 py-2 rounded-lg font-semibold"
+              >
+                {" "}
+                Back
+              </Button>
+            </div>
           </div>
           <div className="flex items-center gap-2 mb-4">
             <div
@@ -245,7 +310,7 @@ export default function TrackVehicle(): React.ReactElement {
               {" "}
               Live Telemetry
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                   Latitude
@@ -270,6 +335,14 @@ export default function TrackVehicle(): React.ReactElement {
                   {new Date(location.timestamp).toLocaleTimeString()}
                 </p>
               </div>
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  Route Points
+                </p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {routeHistory.length > 0 ? routeHistory.length : "Loading..."}
+                </p>
+              </div>
             </div>
           </Card>
         </motion.div>
@@ -290,6 +363,18 @@ export default function TrackVehicle(): React.ReactElement {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                {/* Route History Polyline */}
+                {showHistory && routeHistory.length > 0 && (
+                  <Polyline
+                    positions={routeHistory}
+                    pathOptions={{
+                      color: "#8b5cf6",
+                      weight: 4,
+                      opacity: 0.7,
+                      dashArray: "10, 10",
+                    }}
+                  />
+                )}
                 <Marker position={[location.lat, location.lng]} icon={carIcon}>
                   <Popup>
                     <div className="text-center">
