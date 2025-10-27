@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from "react";
 import type { EarningsStats, Transaction } from "./types";
 import client from "../../lib/client";
+import { 
+  LineChart, 
+  Line, 
+  BarChart, 
+  Bar, 
+  PieChart, 
+  Pie, 
+  Cell,
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
 
 export default function HostEarnings(): React.ReactElement {
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year">("month");
@@ -92,6 +107,111 @@ export default function HostEarnings(): React.ReactElement {
       refunded: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
     };
     return styles[status as keyof typeof styles] || styles.pending;
+  };
+
+  // Prepare chart data based on selected period
+  const prepareEarningsTrendData = () => {
+    const now = new Date();
+    const dataMap = new Map<string, number>();
+
+    // Initialize empty data points based on period
+    if (selectedPeriod === 'week') {
+      // Last 7 days
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const key = date.toLocaleDateString('en-US', { weekday: 'short' });
+        dataMap.set(key, 0);
+      }
+    } else if (selectedPeriod === 'month') {
+      // Last 30 days (grouped by week)
+      for (let i = 3; i >= 0; i--) {
+        dataMap.set(`Week ${4 - i}`, 0);
+      }
+    } else {
+      // Last 12 months
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(now);
+        date.setMonth(date.getMonth() - i);
+        const key = date.toLocaleDateString('en-US', { month: 'short' });
+        dataMap.set(key, 0);
+      }
+    }
+
+    // Fill in actual transaction data
+    transactions.forEach(txn => {
+      if (txn.status !== 'completed') return;
+      
+      const txnDate = new Date(txn.date);
+      let key = '';
+
+      if (selectedPeriod === 'week') {
+        const daysDiff = Math.floor((now.getTime() - txnDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff < 7) {
+          key = txnDate.toLocaleDateString('en-US', { weekday: 'short' });
+        }
+      } else if (selectedPeriod === 'month') {
+        const daysDiff = Math.floor((now.getTime() - txnDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff < 30) {
+          const weekNum = Math.floor(daysDiff / 7);
+          key = `Week ${4 - weekNum}`;
+        }
+      } else {
+        const monthsDiff = (now.getFullYear() - txnDate.getFullYear()) * 12 + 
+                          (now.getMonth() - txnDate.getMonth());
+        if (monthsDiff < 12) {
+          key = txnDate.toLocaleDateString('en-US', { month: 'short' });
+        }
+      }
+
+      if (key && dataMap.has(key)) {
+        dataMap.set(key, (dataMap.get(key) || 0) + txn.amount);
+      }
+    });
+
+    return Array.from(dataMap.entries()).map(([name, earnings]) => ({
+      name,
+      earnings,
+    }));
+  };
+
+  // Prepare data for completed vs pending comparison
+  const prepareComparisonData = () => {
+    return [
+      { name: 'Completed', value: stats.totalEarnings, color: '#10b981' },
+      { name: 'Pending', value: stats.pendingPayout, color: '#f59e0b' },
+    ];
+  };
+
+  // Prepare data for earnings breakdown pie chart
+  const prepareBreakdownData = () => {
+    const grossEarnings = stats.totalEarnings;
+    const platformFee = Math.round(grossEarnings * 0.08);
+    const taxDeduction = Math.round(grossEarnings * 0.02);
+    const netEarnings = Math.round(grossEarnings * 0.9);
+
+    return [
+      { name: 'Net Earnings', value: netEarnings, color: '#10b981' },
+      { name: 'Platform Fee', value: platformFee, color: '#6366f1' },
+      { name: 'Tax', value: taxDeduction, color: '#ef4444' },
+    ];
+  };
+
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ name?: string; value: number; payload?: { name?: string } }> }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {payload[0].name || payload[0].payload?.name}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            ₹{payload[0].value.toLocaleString()}
+          </p>
+        </div>
+      );
+    }
+    return null;
   };
 
   if (loading) {
@@ -187,12 +307,118 @@ export default function HostEarnings(): React.ReactElement {
           </div>
         </div>
         
-        {/* Chart Placeholder */}
-        <div className="h-64 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-6xl mb-4">📈</div>
-            <p className="text-gray-600 dark:text-gray-300 font-medium">Earnings chart will be displayed here</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Showing data for {selectedPeriod}</p>
+        {/* Earnings Trend Line Chart */}
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={prepareEarningsTrendData()}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+            <XAxis 
+              dataKey="name" 
+              stroke="#6b7280"
+              style={{ fontSize: '12px' }}
+            />
+            <YAxis 
+              stroke="#6b7280"
+              style={{ fontSize: '12px' }}
+              tickFormatter={(value) => `₹${value}`}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="earnings" 
+              stroke="#6366f1" 
+              strokeWidth={3}
+              dot={{ fill: '#6366f1', r: 5 }}
+              activeDot={{ r: 7 }}
+              name="Earnings"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Comparison Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Bar Chart: Completed vs Pending */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+          <h3 className="text-lg font-semibold mb-4">Completed vs Pending</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={prepareComparisonData()}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+              <XAxis 
+                dataKey="name" 
+                stroke="#6b7280"
+                style={{ fontSize: '12px' }}
+              />
+              <YAxis 
+                stroke="#6b7280"
+                style={{ fontSize: '12px' }}
+                tickFormatter={(value) => `₹${value}`}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="value" name="Amount">
+                {prepareComparisonData().map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Pie Chart: Earnings Breakdown */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+          <h3 className="text-lg font-semibold mb-4">Earnings Breakdown</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={prepareBreakdownData()}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={(props) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = (props.outerRadius as number) + 20;
+                  const x = (props.cx as number) + radius * Math.cos(-((props.midAngle as number) * RADIAN));
+                  const y = (props.cy as number) + radius * Math.sin(-((props.midAngle as number) * RADIAN));
+                  const percent = ((props.value as number) / prepareBreakdownData().reduce((a, b) => a + b.value, 0)) * 100;
+                  return (
+                    <text 
+                      x={x} 
+                      y={y} 
+                      fill="#374151" 
+                      textAnchor={x > (props.cx as number) ? 'start' : 'end'} 
+                      dominantBaseline="central"
+                      className="text-xs font-medium"
+                    >
+                      {`${percent.toFixed(0)}%`}
+                    </text>
+                  );
+                }}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {prepareBreakdownData().map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="mt-4 space-y-2">
+            {prepareBreakdownData().map((item, i) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <div className="flex items-center">
+                  <div 
+                    className="w-3 h-3 rounded-full mr-2" 
+                    style={{ backgroundColor: item.color }}
+                  ></div>
+                  <span className="text-gray-600 dark:text-gray-400">{item.name}</span>
+                </div>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  ₹{item.value.toLocaleString()}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
