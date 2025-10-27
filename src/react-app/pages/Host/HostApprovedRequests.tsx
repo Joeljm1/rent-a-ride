@@ -35,6 +35,7 @@ export default function HostApprovedRequests(): React.ReactElement {
   const [processingReqId, setProcessingReqId] = useState<number | null>(null);
   const [generatedGpsId, setGeneratedGpsId] = useState<string>("");
   const [showGpsIdModal, setShowGpsIdModal] = useState<boolean>(false);
+  const [selectedGpsRequest, setSelectedGpsRequest] = useState<ApprovedRequest | null>(null);
 
   const fetchApprovedRequests = async () => {
     try {
@@ -78,6 +79,7 @@ export default function HostApprovedRequests(): React.ReactElement {
   const closeGpsIdModal = () => {
     setShowGpsIdModal(false);
     setGeneratedGpsId("");
+    setSelectedGpsRequest(null);
   };
 
   const validatePassword = (password: string): boolean => {
@@ -151,6 +153,10 @@ export default function HostApprovedRequests(): React.ReactElement {
 
       // Show GPS ID modal
       setGeneratedGpsId(gpsId);
+      const updatedRequest = requests.find(req => req.reqId === selectedReqId);
+      if (updatedRequest) {
+        setSelectedGpsRequest({ ...updatedRequest, gpsId, carStatus: "renting" });
+      }
       closeGpsModal();
       setShowGpsIdModal(true);
     } catch (err) {
@@ -432,18 +438,21 @@ export default function HostApprovedRequests(): React.ReactElement {
                                 <Button
                                   onClick={() => {
                                     setGeneratedGpsId(request.gpsId!);
+                                    setSelectedGpsRequest(request);
                                     setShowGpsIdModal(true);
                                   }}
                                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold tracking-wide"
                                 >
                                   📍 View GPS Details
                                 </Button>
-                                <Button
-                                  onClick={() => window.location.href = `/host/track/${request.gpsId}`}
-                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold tracking-wide"
-                                >
-                                  🗺️ Track Vehicle
-                                </Button>
+                                {request.status !== "completed" && (
+                                  <Button
+                                    onClick={() => window.location.href = `/host/track/${request.gpsId}`}
+                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold tracking-wide"
+                                  >
+                                    🗺️ Track Vehicle
+                                  </Button>
+                                )}
                                 {request.carStatus === "renting" && (
                                   <Button
                                     onClick={() => handleCompleteRental(request.reqId)}
@@ -593,12 +602,14 @@ export default function HostApprovedRequests(): React.ReactElement {
                   </p>
                 </div>
                 <div className="flex gap-3">
-                  <Button
-                    onClick={() => window.location.href = `/host/track/${generatedGpsId}`}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
-                  >
-                    🗺️ Track Vehicle
-                  </Button>
+                  {selectedGpsRequest?.status !== "completed" && (
+                    <Button
+                      onClick={() => window.location.href = `/host/track/${generatedGpsId}`}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+                    >
+                      🗺️ Track Vehicle
+                    </Button>
+                  )}
                   <Button
                     onClick={closeGpsIdModal}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold"

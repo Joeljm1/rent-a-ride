@@ -8,16 +8,16 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
 export default function FormInput({ label, error, className = "", ...props }: FormInputProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
         {label}
       </label>
       <input
         {...props}
-        className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-          error ? "border-red-500" : "border-gray-300"
+        className={`px-4 py-3 bg-white dark:bg-gray-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-all text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
+          error ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
         } ${className}`}
       />
-      {error && <span className="text-sm text-red-500">{error}</span>}
+      {error && <span className="text-sm text-red-500 dark:text-red-400">{error}</span>}
     </div>
   );
 }

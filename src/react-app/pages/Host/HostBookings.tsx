@@ -309,7 +309,7 @@ export default function HostRequests(): React.ReactElement {
                                 </Button>
                               )}
                               
-                              {request.gpsId && (request.status === "approved" || request.status === "completed") && (
+                              {request.gpsId && request.status === "approved" && (
                                 <Link
                                   to={`/host/track/${request.gpsId}`}
                                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold tracking-wide inline-flex items-center gap-2"

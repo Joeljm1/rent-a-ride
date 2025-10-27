@@ -81,7 +81,7 @@ export default function FileUpload({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Car Images (Max {maxFiles})
         </label>
         <FileInput
@@ -89,12 +89,13 @@ export default function FileUpload({
           onFileSelect={handleFileSelect}
           disabled={files.length >= maxFiles}
         />
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Max {maxFiles} files, {maxSize / (1024 * 1024)}MB each. Accepted formats: JPG, PNG, WebP
         </p>
         {files.length > 0 && (
-          <p className="text-xs text-blue-600">
-            Click the star icon to set an image as the cover photo
+          <p className="text-xs text-indigo-600 dark:text-indigo-400 flex items-center space-x-1">
+            <span>⭐</span>
+            <span>Click the star icon to set an image as the cover photo</span>
           </p>
         )}
       </div>
@@ -129,16 +130,25 @@ function FileInput({ inputRef, onFileSelect, disabled }: FileInputProps) {
       />
       <label
         htmlFor="file-upload"
-        className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed px-6 py-8 text-sm font-medium transition-colors ${
+        className={`flex cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-sm font-medium transition-all duration-200 ${
           disabled 
-            ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
-            : "border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50"
+            ? "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-400 dark:text-gray-600 cursor-not-allowed"
+            : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
         }`}
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
-        {disabled ? "Maximum files reached" : "Click to upload images"}
+        <div className="flex flex-col items-center">
+          <span className="text-base font-semibold">
+            {disabled ? "Maximum files reached" : "Click to upload images"}
+          </span>
+          {!disabled && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              or drag and drop
+            </span>
+          )}
+        </div>
       </label>
     </>
   );
@@ -154,9 +164,12 @@ function FileList({ files, onRemove, onSetCover }: FileListProps) {
   if (files.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium text-gray-700">Selected Files:</h3>
-      <div className="space-y-2">
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center space-x-2">
+        <span>📁</span>
+        <span>Selected Files ({files.length}):</span>
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {files.map((fileWithProgress) => (
           <FileItem 
             key={fileWithProgress.id} 
@@ -188,27 +201,29 @@ function FileItem({ fileWithProgress, onRemove, isCover, onSetCover }: FileItemP
   };
 
   return (
-    <div className={`flex items-center justify-between p-3 rounded-md border ${
-      isCover ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+    <div className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-200 ${
+      isCover 
+        ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-indigo-300 dark:border-indigo-700 shadow-sm' 
+        : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
     }`}>
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="flex-shrink-0">
-          <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+        <div className="flex-shrink-0 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <svg className="w-6 h-6 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
           </svg>
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {fileWithProgress.file.name}
             </p>
             {isCover && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Cover
+              <span className="inline-flex items-center px-1 mt-3 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-700">
+                ⭐ Cover
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             {formatFileSize(fileWithProgress.file.size)}
           </p>
         </div>
@@ -216,10 +231,10 @@ function FileItem({ fileWithProgress, onRemove, isCover, onSetCover }: FileItemP
       <div className="flex items-center gap-2">
         <button
           onClick={() => onSetCover(fileWithProgress.id)}
-          className={`flex-shrink-0 transition-colors ${
+          className={`flex-shrink-0 p-2 ml-2 rounded-lg transition-all duration-200 ${
             isCover
-              ? 'text-blue-600 hover:text-blue-800'
-              : 'text-gray-400 hover:text-yellow-500'
+              ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50'
+              : 'text-gray-400 dark:text-gray-500 hover:text-yellow-500 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
           }`}
           type="button"
           title={isCover ? "Cover image" : "Set as cover image"}
@@ -230,8 +245,9 @@ function FileItem({ fileWithProgress, onRemove, isCover, onSetCover }: FileItemP
         </button>
         <button
           onClick={() => onRemove(fileWithProgress.id)}
-          className="flex-shrink-0 ml-1 text-red-600 hover:text-red-800 transition-colors"
+          className="flex-shrink-0 p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
           type="button"
+          title="Remove image"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -114,7 +114,7 @@ export default function Dashboard() {
                     {/* Car Image */}
                     <img
                       src={request.carPic}
-                      alt={`${request.carBrand} ${request.carModel}`}
+                      alt={`${request.carBrand.toUpperCase()} ${request.carModel.toUpperCase()}`}
                       className="w-20 h-20 object-cover rounded-lg"
                     />
 
@@ -122,7 +122,7 @@ export default function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="font-bold text-gray-900 dark:text-white truncate">
-                          {request.carBrand} {request.carModel}
+                          {request.carBrand.toUpperCase()} {request.carModel.toUpperCase()}
                         </h4>
                         <span
                           className={`inline-block w-2 h-2 rounded-full ${getStatusColor(
