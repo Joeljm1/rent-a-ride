@@ -261,14 +261,6 @@ export default function HostEarnings(): React.ReactElement {
             Track your rental income and payouts
           </p>
         </div>
-        <div className="flex items-center space-x-3">
-          <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow">
-            Request Payout
-          </button>
-          <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded shadow">
-            Download Report
-          </button>
-        </div>
       </div>
 
       {/* Stats Cards */}
