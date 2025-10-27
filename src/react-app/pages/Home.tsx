@@ -2,10 +2,14 @@ import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "motion/react";
+import { useContext } from "react";
+import { AuthContext } from "../AuthContext";
 import CarImages from "./carImages";
 
 export default function Home() {
   const { carImages, currentImageIndex, carDetailsImages, currentDetailImageIndex, setCurrentImageIndex, setCurrentDetailImageIndex } = CarImages();
+  const session = useContext(AuthContext);
+  
   return (
     <div className="flex-grow bg-white dark:bg-gray-900">
       {/* Hero Section with Background Image */}
@@ -718,14 +722,16 @@ export default function Home() {
             <br />
             every destination.
           </h2>
-          <Link to="/register">
-            <Button 
-              size="lg"
-              className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold text-lg px-10 py-6 rounded-full shadow-2xl transition-all transform hover:scale-105 tracking-wide"
-            >
-              Start Your Journey
-            </Button>
-          </Link>
+          {!session?.data?.user && (
+            <Link to="/register">
+              <Button 
+                size="lg"
+                className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold text-lg px-10 py-6 rounded-full shadow-2xl transition-all transform hover:scale-105 tracking-wide"
+              >
+                Start Your Journey
+              </Button>
+            </Link>
+          )}
         </div>
       </section>
     </div>
