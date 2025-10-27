@@ -173,8 +173,8 @@ export default function TrackVehicle(): React.ReactElement {
             if (message.includes("null")) {
               console.log("No GPS data yet, using default location");
               setLocation({
-                lat: 28.6139,
-                lng: 77.209,
+                lat: 9.754270,
+                lng: 76.651331,
                 timestamp: new Date().toISOString(),
               });
             }

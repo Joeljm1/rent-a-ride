@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import HostProfileHeader from "./HostProfile/HostProfileHeader";
-import ProfileStats from "./HostProfile/ProfileStats";
 import TabNavigation from "./HostProfile/TabNavigation";
 import PersonalTab from "./HostProfile/PersonalTab";
 import BusinessTab from "./HostProfile/BuisnessTab";
@@ -59,6 +58,20 @@ export default function HostProfile() {
     backgroundCheck: false
   });
 
+  // Load profile data from localStorage on mount
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('hostProfileData');
+    if (savedProfile) {
+      try {
+        const parsedProfile = JSON.parse(savedProfile) as ProfileData;
+        setProfileData(parsedProfile);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error parsing saved profile:", err);
+      }
+    }
+  }, []);
+
   // Fetch profile data from database
   useEffect(() => {
     const fetchProfile = async () => {
@@ -86,16 +99,21 @@ export default function HostProfile() {
         const firstName = nameParts[0] || "";
         const lastName = nameParts.slice(1).join(" ") || "";
 
-        setProfileData((prev) => ({
-          ...prev,
-          firstName,
-          lastName,
-          email: data.email,
-          emailVerified: data.emailVerified || false,
-          hostSince: data.createdAt
-            ? new Date(data.createdAt).toISOString().split("T")[0]
-            : "",
-        }));
+        setProfileData((prev) => {
+          const updatedProfile = {
+            ...prev,
+            firstName,
+            lastName,
+            email: data.email,
+            emailVerified: data.emailVerified || false,
+            hostSince: data.createdAt
+              ? new Date(data.createdAt).toISOString().split("T")[0]
+              : "",
+          };
+          // Save to localStorage
+          localStorage.setItem('hostProfileData', JSON.stringify(updatedProfile));
+          return updatedProfile;
+        });
       } catch (err) {
         console.error("Error fetching profile:", err);
       } finally {
@@ -116,10 +134,15 @@ export default function HostProfile() {
       value = (target as HTMLInputElement).checked;
     }
 
-    setProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setProfileData(prev => {
+      const updated = {
+        ...prev,
+        [name]: value
+      };
+      // Save to localStorage whenever data changes
+      localStorage.setItem('hostProfileData', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   if (loading) {
@@ -138,8 +161,6 @@ export default function HostProfile() {
       {/* Profile Header */}
       <HostProfileHeader profileData={profileData} isEditing={isEditing} setIsEditing={setIsEditing} />
 
-      {/* Quick Stats */}
-      <ProfileStats profileData={profileData} />
 
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">

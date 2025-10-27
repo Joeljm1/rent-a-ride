@@ -48,11 +48,7 @@ export default function HostProfileHeader({ profileData, isEditing, setIsEditing
                 {profileData.firstName} {profileData.lastName}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">{profileData.businessName}</p>
-              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                <span>⭐ 4.8 Host Rating</span>
-                <span>🚗 {12} Vehicles</span>
-                <span>📅 Host since {new Date(profileData.hostSince).getFullYear()}</span>
-              </div>
+              
             </div>
           </div>
 
